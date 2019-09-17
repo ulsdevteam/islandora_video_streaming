@@ -1,0 +1,5 @@
+name = Islandora video streaming
+description = Test module
+core = 7.x
+version = 7.x-1.12
+package = Islandora Viewers
