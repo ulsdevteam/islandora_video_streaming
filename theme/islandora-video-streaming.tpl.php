@@ -6,6 +6,6 @@
         "wid": "_2592481",
         "uiconf_id": 44456041,
         "flashvars": {},
-        "entry_id": "1_n06q1hgl"
+        "entry_id": "<?php echo $params["entry_id"] ?>"//"1_00tx69sb"
       });
 </script>

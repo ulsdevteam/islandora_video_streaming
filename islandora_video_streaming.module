@@ -3,13 +3,7 @@
 
 /**
  * @file
- * An Islandora viewer module using Video.js
- */
-//    $options = [
-//        'kaltura' => ['label' => 'Kaltura', 'description' => 'Use Kaltura and override the viewer'],
-//        'panopto' => ['label' => 'Panopto', 'description' => 'Use Panopto and override the viewer'],
-//        'none' => ['label' => 'None', 'description' => 'Use the default viewer setting.']
-//    ];
+ * An Islandora viewer module using Kaltura and Panopto
 /**
  * Implements hook_islandora_viewer_info().
  */
@@ -34,6 +28,7 @@ function islandora_video_streaming_islandora_viewer_info() {
 
 /**
  * Implements hook_menu().
+ * Question: When do I need this?
  */
 function islandora_video_streaming_menu() {
   return array(
@@ -81,7 +76,5 @@ function template_preprocess_islandora_video_streaming(array &$variables) {
  *   Array with configuration info for the audio player.
  */
 function islandora_video_streaming_kaltura_callback($params = array()) {
-    drupal_set_message("HOOK THEME: ".json_encode($params));
-  $a = theme('islandora_video_streaming', array('params' => $params));
-  return $a;
+  return theme('islandora_video_streaming', array('params' => $params));
 }
