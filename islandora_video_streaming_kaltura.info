@@ -1,0 +1,8 @@
+name = Islandora video streaming (Kaltura)
+description = Enables streaming Islandora Video from a Kaltura server
+core = 7.x
+version = 7.x-1.12
+package = Islandora Viewers
+dependencies[] = islandora_video_streaming
+dependencies[] = kaltura
+dependencies[] = field_kaltura

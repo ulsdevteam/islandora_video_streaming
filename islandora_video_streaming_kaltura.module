@@ -1,0 +1,85 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function islandora_video_streaming_kaltura_menu() {
+  return array(
+    'admin/islandora/islandora_viewers/video_streaming_kaltura' => array(
+      'title' => 'Kaltura Video Streaming',
+      'description' => 'Configure the Kaltura Video Streaming Viewer',
+      'page callback' => 'drupal_get_form',
+      'access arguments' => array('administer site configuration'),
+      'page arguments' => array('islandora_video_streaming_kaltura_admin'),
+      'file' => 'includes/kaltura_admin.form.inc',
+      'type' => MENU_NORMAL_ITEM,
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_islandora_viewer_info().
+ */
+function islandora_video_streaming_kaltura_islandora_viewer_info() {
+  return array(
+    'islandora_video_streaming_kaltura' => array(
+      'label' => t('Kaltura'),
+      'description' => t('Use Kaltura video streaming service'),
+      'derivative_description' => t('Upload new content to Kaltura video streaming service'),
+      'mimetype' => array('application/javascript'),
+      'configuration' => '',
+    ),
+  );
+}
+
+/**
+ * Implements hook_islandora_CMODEL_PID_derivative()
+ * 
+**/
+function islandora_video_streaming_kaltura_islandora_sp_videoCModel_islandora_derivative() {
+dpm('registering deriviative');
+  $derivatives = array();
+  if (variable_get('islandora_video_streaming_kaltura_make_derivative', false)) {
+    $derivatives[] = array(
+      'source_dsid' => 'OBJ',
+      'destination_dsid' => 'KALTURA_STREAM',
+      'weight' => '0',
+      'function' => array(
+        'islandora_video_streaming_kaltura_upload',
+      ),
+      'file' => drupal_get_path('module', 'islandora_video_streaming') . '/includes/kaltura_derivatives.inc',
+    );
+  }
+  return $derivatives;
+}
+
+/**
+ * Change output for streaming capable videos, when appropriate
+ * implements hook_process_islandora_video
+ *
+ * @var $variables array The page content variables
+ */
+function islandora_video_streaming_kaltura_process_islandora_video($variables = array()) {
+  $object = $variables['object'];
+  $streamDatastream = 'KALTURA_STREAM';
+  // If a streaming datastream is available, and if configured to stream
+  if ($object[$streamDatastream] && variable_get('islandora_video_streaming_viewers')) {
+    $ds = json_decode($object[$streamDatastream]->content);
+    // get the viewer params of PID and URL
+    $params = array('entity_id' => $ds->entry_id);
+    // get a streaming viewer instance
+    drupal_load('module', 'field_kaltura');
+    $fieldid = variable_get('islandora_video_streaming_kaltura_field');
+    $field = field_info_field($fieldid);
+    // TODO: replace nulls with acutal parameters
+    // TODO: some of these many need to come from the KALTURA_STREAM json?
+    $new_content = field_kaltura_build_embed($params['entity_id'], null, $field['settings'], null, null, null, null);
+    // if the viewer was created successfully, overwrite the non-streaming viewer
+    if (isset($new_content['html']) && $new_content['html']) {
+      $variables['islandora_content'] = $new_content['html'];
+    }
+  }
+}
+
+

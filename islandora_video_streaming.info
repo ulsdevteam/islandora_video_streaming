@@ -1,5 +1,6 @@
 name = Islandora video streaming
-description = Test module
+description = Extends Islandora Video to support streaming services
 core = 7.x
 version = 7.x-1.12
 package = Islandora Viewers
+dependencies[] = islandora_video

@@ -2,154 +2,8 @@
 
 /**
  * @file
- * An Islandora viewer module using Kaltura and Panopto
-/**
- * Implements hook_islandora_viewer_info().
+ * An extensible Islandora viewer module
  */
-function islandora_video_streaming_islandora_viewer_info() {
-  return array(
-    'islandora_video_streaming_kaltura' => array(
-      'label' => t('Kaltura'),
-      'description' => t('Use Kaltura and override the viewer'),
-      'callback' => 'islandora_video_streaming_kaltura_callback',
-      'mimetype' => array('application/javascript'),
-      'configuration' => '',
-    ),
-      'islandora_video_streaming_panopto' => array(
-      'label' => t('Panopto'),
-      'description' => t('Use Panopto and override the viewer'),
-      'callback' => 'islandora_video_streaming_panopto_callback',
-      'mimetype' => array('application/javascript'),
-      'configuration' => '',
-    ),
-  );
-}
-
-/**
- * Implements hook_menu().
- * Question: When do I need this?
- * This hook_menu gets called when menus are built.  This is specifically modifying the Islandora admin menu.
- * See for example: http://localhost:8000/admin/islandora/islandora_viewers
- * FIXME: this function doesn't exist islandora_video_streaming_admin
- * [x] FIXME: this file doesn't exist includes/admin.form.inc
- */
-function islandora_video_streaming_menu() {
-  return array(
-    'admin/islandora/islandora_viewers/video_streaming' => array(
-      'title' => 'Video Streaming',
-      'description' => 'Configure the Video Streaming Viewers.',
-      'page callback' => 'drupal_get_form',
-      'access arguments' => array('administer site configuration'),
-//      'page arguments' => array('islandora_video_streaming_admin'),
-      'file' => 'includes/admin.form.inc',
-      'type' => MENU_NORMAL_ITEM,
-    ),
-  );
-}
-
-/**
- * Implements hook_theme().
- * TODO: key islandora_video_streaming might need to change
- */
-function islandora_video_streaming_theme($existing, $type, $theme, $path) {
-  drupal_set_message("HOOK THEME");
-    return array(
-    'islandora_video_streaming' => array(
-      'template' => 'theme/islandora-video-streaming',
-      'variables' => array('object' => NULL, 'params' => NULL),
-    ),
-  );
-}
-
-/**
- * Implements template_preprocess_HOOK().
- */
-function template_preprocess_islandora_video_streaming(array &$variables) {
-  $params = $variables['params'];
-  $variables['sources'] = array();
-  if (isset($params['tn'])) {
-    $variables['tn'] = $params['tn'];
-  }
-}
-
-/**
- * Callback function to process audio player.
- *
- * @param array $params
- *   Array with configuration info for the audio player.
- */
-function islandora_video_streaming_kaltura_callback($params = array()) {
-  return theme('islandora_video_streaming', array('params' => $params));
-}
-
-/**
- * Implement Kaltura video upload  
- * @param AbstractObject $object 
- * @param String $filePath video file path
- */
-function islandora_video_streaming_upload_to_Kaltura($object, $filePath) {
-  $kcDir = libraries_get_Path('KalturaClient');
-  require_once $kcDir.'/KalturaClient.php';
-  
-  $config = new KalturaConfiguration("2592481");
-  $client = new KalturaClient($config);
-  $ks = $client->session->start("1cde26bbb40938bedd8fff332fab1a51", "cas386@pitt.edu", KalturaSessionType::ADMIN, 2592481);
-  $client->setKS($ks);
-  
-  // Create an Upload Token
-  $uploadToken = new KalturaUploadToken();
-    try {
-    $result = $client->uploadToken->add($uploadToken);
-  } catch (Exception $e) {
-    drupal_set_message($e->getMessage());
-  }
-  
-  // Send the Data
-  if ($result) {
-      $uploadTokenId = $result->id;
-      drupal_set_message($uploadTokenId);
-  }
-  
-  $resume = false;
-  $finalChunk = true;
-  $resumeAt = -1;
-  
-  try {
-    $result = $client->uploadToken->upload($uploadTokenId, $filePath, $resume, $finalChunk, $resumeAt);
-  } catch (Exception $e) {
-      drupal_set_message($e->getMessage());
-  }
-  // Creating the Kaltura Media Entry
-  $mediaEntry = new KalturaMediaEntry();
-  $mediaEntry->name = $filePath;
-  $mediaEntry->mediaType = KalturaMediaType::VIDEO;
-
-  $entry = $client->media->add($mediaEntry);
-  
-  // Attach the Video
-  $entryId = $entry->id;
-  $resource = new KalturaUploadedFileTokenResource();
-  $resource->token = $uploadTokenId;
-
-  try {
-    $result = $client->media->addContent($entryId, $resource);
-    $streaming['entry_id'] = $result->id;
-  } catch (Exception $e) {
-    drupal_set_message($e->getMessage());
-  }
-  
-  $version = -1;
-  $result = $client->media->get($entryId, $version);
-  
-  try {
-    $result = $client->media->get($entryId, $version);
-  } catch (Exception $e) {
-    echo $e->getMessage();
-  }
-
-  islandora_video_add_datastream($object, 'KALTURA_INFO', NULL, FALSE, json_encode($streaming));
-}
-
 
 /**
  * Change the islandora_video_admin form
@@ -160,7 +14,7 @@ function islandora_video_streaming_upload_to_Kaltura($object, $filePath) {
 **/
 function islandora_video_streaming_form_islandora_video_admin_alter(array &$form, array &$form_state) {
 
-  // Add an addtional hander for the reset
+  // Add an addtional handler for the reset
   $form['actions']['reset']['#submit'][] = 'islandora_video_streaming_islandora_video_admin_submit';
 
   // Add a new checkbox within an existing element on the form
@@ -170,10 +24,45 @@ function islandora_video_streaming_form_islandora_video_admin_alter(array &$form
     '#description' => t('Override the default viewer with a streaming viewer, when a streaming-capable datastream exists'),
     '#default_value' => variable_get('islandora_video_streaming_viewers', false),
   );
+  $viewers = islandora_video_streaming_get_available_viewers();
+  $viewerList = '';
+  foreach ($viewers as $k => $v) {
+    $viewerList .= '<li>'.$v['label'].'</li>';
+    $form['derivatives'][$k.'_make_derivative'] = array(
+      '#type' => 'checkbox',
+      '#title' => $v['derivative_description'],
+      '#description' => '',
+      '#default_value' => variable_get($k.'_make_derivative'),
+    );
+  }
+  if (!$viewerList) {
+    $viewerList = '<li>'.t('No streaming viewers are enabled').'</li>';
+  }
+  $form['viewers']['islandora_streaming_viewers_list'] = array(
+    '#markup' => t('The following viewers will be utilized, in order.  (To change the order, alter the module weight for the viewer.)'.'<ul>'.$viewerList.'</ul>'),
+  );
+}
 
-  // Add a whole new section from a custom method in this module
-  $streaming_table = islandora_video_streaming_settings_form();
-  $form += $streaming_table;
+/**
+ * Get a sorted list of available streaming viewers
+ * @return array
+*/
+function islandora_video_streaming_get_available_viewers() {
+  $viewers = module_invoke_all('islandora_viewer_info');
+  foreach ($viewers as $k => $v) {
+    if (strpos($k, 'islandora_video_streaming') !== 0) {
+      unset($viewers[$k]);
+    } else {
+      $viewers[$k]['module_weight'] = db_query("SELECT weight FROM {system} WHERE name = :modname", array(':modname' => $k))->fetchObject()->weight;
+    }
+  }
+  uasort(
+    $viewers,
+    function ($a, $b) {
+      return $b['module_weight'] - $a['module_weight'];
+    }
+  );
+  return $viewers;
 }
 
 /**
@@ -189,7 +78,10 @@ function islandora_video_streaming_islandora_video_admin_submit($form, &$form_st
   switch ($op) {
     case 'edit-reset':
       variable_del('islandora_video_streaming_viewers');
-      variable_del('islandora_video_streaming_settings');
+      foreach (array_keys(islandora_video_streaming_get_available_viewers()) as $k) {
+        variable_del($k.'_make_derivative');
+      }
       break;
   }
 }
+
