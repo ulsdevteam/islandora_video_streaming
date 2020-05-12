@@ -73,7 +73,6 @@ function islandora_video_streaming_kaltura_process_islandora_video($variables = 
     $fieldid = variable_get('islandora_video_streaming_kaltura_field');
     $field = field_info_field($fieldid);
     // TODO: replace nulls with acutal parameters
-    // Some of the parameters were not used so they were erased
     // TODO: some of these many need to come from the KALTURA_STREAM json?
     $new_content = field_kaltura_build_embed($params['entity_id'], null, $field['settings'], null, null, null, null);
     // if the viewer was created successfully, overwrite the non-streaming viewer
