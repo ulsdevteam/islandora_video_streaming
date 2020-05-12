@@ -43,7 +43,7 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       $entity = kaltura_entry_create(array('kaltura_entryid' => $entry->id));
       kaltura_map_properties($entry, $entity);
             
-      kaltura_save_entry_metadata($entry);
+      kaltura_save_entry_metadata($entity);
       kaltura_entry_save($entity); //write entity to drupal db
       
       $streaming['entry_id'] = $entry->id;
