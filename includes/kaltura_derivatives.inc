@@ -12,6 +12,28 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
     if ($archival_file === FALSE) {
       return islandora_video_no_obj_datastream($object->id);
     }
+    
+    $old_content= null; 
+    $old_entity_id = null;
+    //if an existing object['KALTURA_STREAM'] is present, delete existing kaltura
+    //video and media entry. 
+    if (isset($object['KALTURA_STREAM']))
+    {
+        //fetch actual datastream content FROM islandora
+        $old_content = $object['KALTURA_STREAM']->content;
+        //if $old_content exists then delete it from Kaltura server
+        if (isset($old_content))
+        {
+            //decode $old_content for entry_id
+            $decoded = json_decode($old_content, true);
+            //find entity through $decoded string 
+            $entity = kaltura_entry_load($decoded['entry_id']);
+            $old_entity_id = entity_id('kaltura_entry', $entity);
+            kaltura_entry_delete($old_entity_id);
+        }
+    }
+    
+    $prevJSON =$object['KALTURA_STREAM'];
     $filePath = drupal_realpath($archival_file['file']->uri); //copy of datastream
     drupal_load('module', 'kaltura');
     $failureMessage = array(
@@ -28,6 +50,15 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
     try {
       $helpers = new KalturaHelpers();
       $client = $helpers->getKalturaClient();
+      
+      try {
+        $myService = new KalturaBaseEntryService($client);
+        $myService->delete($old_entity_id);
+      } catch (Exception $ex) {
+        $failureMessage['messages'][0]['message'] = t('KalturaBaseEntry error: @exception');
+        $failureMessage['messages'][0]['message_sub']['@exception'] = $e->getMessage();
+        watchdog_exception('islandora_video_streaming_kaltura', $e);
+      }
 
       // TODO: would it be better or worse to skip the KalturaMediaEntry ?
       //It would be worse? Seems like everything is reliant on entry id and
@@ -49,6 +80,8 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       $streaming['entry_id'] = $entry->id;
     }
     catch (Exception $e) {
+      //delete the KALTURA_STREAM datastream.
+
       $failureMessage['messages'][0]['message'] = t('Failed to upload object @pid to Kaltura, exception: @exception');
       $failureMessage['messages'][0]['message_sub']['@exception'] = $e->getMessage();
       watchdog_exception('islandora_video_streaming_kaltura', $e);
@@ -56,6 +89,7 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         
     //Deletes tmp file
     file_delete($archival_file['file'], true);
+    
     
     if ($streaming) {
       // Write the data to a temporary file.
@@ -65,6 +99,7 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         $failureMessage['messages'][0]['message_sub']['@filename'] = $temp_name;
         return $failureMessage;
       }
+      
       $arr = islandora_video_add_datastream($object, 'KALTURA_STREAM', $temp_name);
       
       if ($arr['success'] == TRUE){ 
