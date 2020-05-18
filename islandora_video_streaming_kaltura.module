@@ -71,10 +71,10 @@ function islandora_video_streaming_kaltura_process_islandora_video($variables = 
     // get a streaming viewer instance
     drupal_load('module', 'field_kaltura');
     $fieldid = variable_get('islandora_video_streaming_kaltura_field');
-    $field = field_info_field($fieldid);
-    // TODO: replace nulls with acutal parameters
+    $field = field_info_field($fieldid); 
     // TODO: some of these many need to come from the KALTURA_STREAM json?
-    $new_content = field_kaltura_build_embed($params['entity_id'], null, $field['settings'], null, null, null, null);
+    //Will only do videos with this module so null for $type is changed to KALTURA_MEDIA_TYPE_VIDEO
+    $new_content = field_kaltura_build_embed($params['entity_id'], KALTURA_MEDIA_TYPE_VIDEO, $field['settings'],  null, null, null, null);
     // if the viewer was created successfully, overwrite the non-streaming viewer
     if (isset($new_content['html']) && $new_content['html']) {
       $variables['islandora_content'] = $new_content['html'];

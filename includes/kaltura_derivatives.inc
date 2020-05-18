@@ -51,18 +51,18 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       $helpers = new KalturaHelpers();
       $client = $helpers->getKalturaClient();
       
-      try {
-        $myService = new KalturaBaseEntryService($client);
-        $myService->delete($old_entity_id);
-      } catch (Exception $ex) {
-        $failureMessage['messages'][0]['message'] = t('KalturaBaseEntry error: @exception');
-        $failureMessage['messages'][0]['message_sub']['@exception'] = $e->getMessage();
-        watchdog_exception('islandora_video_streaming_kaltura', $e);
+      if (isset($old_content))
+      {
+        try {
+          $myService = new KalturaBaseEntryService($client);
+          $myService->delete($old_entity_id);
+        } catch (Exception $ex) {
+          $failureMessage['messages'][0]['message'] = t('KalturaBaseEntry error: @exception');
+          $failureMessage['messages'][0]['message_sub']['@exception'] = $ex->getMessage();
+          watchdog_exception('islandora_video_streaming_kaltura', $ex);
+        }
       }
 
-      // TODO: would it be better or worse to skip the KalturaMediaEntry ?
-      //It would be worse? Seems like everything is reliant on entry id and
-      //Token does not contain entry id, it contains only a string.
       $entry = new KalturaMediaEntry();
       $entry->name = pathinfo($filePath, PATHINFO_FILENAME);
       $entry->mediaType = kaltura_get_media_type_by_mime(file_get_mimetype($filePath)); //original datafile
@@ -78,10 +78,7 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       kaltura_entry_save($entity); //write entity to drupal db
       
       $streaming['entry_id'] = $entry->id;
-    }
-    catch (Exception $e) {
-      //delete the KALTURA_STREAM datastream.
-
+    } catch (Exception $e) {
       $failureMessage['messages'][0]['message'] = t('Failed to upload object @pid to Kaltura, exception: @exception');
       $failureMessage['messages'][0]['message_sub']['@exception'] = $e->getMessage();
       watchdog_exception('islandora_video_streaming_kaltura', $e);
