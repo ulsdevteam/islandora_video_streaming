@@ -6,7 +6,7 @@
  * @param String $filePath video file path
  */
 function islandora_video_streaming_panopto_upload($object, $filePath) {
-  if ($force || !isset[$object['KALTURA_STREAM']) {
+  if ($force || !isset($object['KALTURA_STREAM'])) {
     $archival_file = islandora_video_copy_obj_datastream($object);
     if ($archival_file === FALSE) {
       return islandora_video_no_obj_datastream($object->id);
