@@ -21,16 +21,16 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
     $old_content = $object['KALTURA_STREAM']->content;
     //if $old_content exists then delete it from Kaltura server
     if (isset($old_content)) {
-    //decode $old_content for entry_id
-    $decoded = json_decode($old_content, true);
+      //decode $old_content for entry_id
+      $decoded = json_decode($old_content, true);
         //check if json is valid
-        if ($decoded !== null) {
-          $entity = kaltura_entry_load($decoded['entry_id']);
-          if ($entity !== False) {
-            $old_entity_id = entity_id('kaltura_entry', $entity);
-            kaltura_entry_delete($old_entity_id);
-          }
+      if ($decoded !== null) {
+        $entity = kaltura_entry_load($decoded['entry_id']);
+        if ($entity !== False) {
+          $old_entity_id = entity_id('kaltura_entry', $entity);
+          kaltura_entry_delete($old_entity_id);
         }
+      }
     }
   }
   $filePath = drupal_realpath($archival_file['file']->uri); //copy of datastream
