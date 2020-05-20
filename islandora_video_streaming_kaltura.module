@@ -12,11 +12,10 @@ function islandora_video_streaming_kaltura_menu() {
       'access arguments' => array('administer site configuration'),
       'page arguments' => array('islandora_video_streaming_kaltura_admin'),
       'file' => 'includes/kaltura_admin.form.inc',
-      'type' => MENU_NORMAL_ITEM,
+      'type' => MENU_NORMAL_ITEM, 
     ),
   );
-}
-
+} 
 
 /**
  * Implements hook_islandora_viewer_info().

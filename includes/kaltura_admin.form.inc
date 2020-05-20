@@ -15,7 +15,7 @@ function islandora_video_streaming_kaltura_admin(array $form, array &$form_state
   $form = array();
   $form['fieldselect'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Kalutra field'),
+    '#title' => t('Kaltura field'),
     'islandora_video_streaming_kaltura_field' => array(
       '#type' => 'select',
       '#options' => array_combine(array_keys($fields), array_keys($fields)),

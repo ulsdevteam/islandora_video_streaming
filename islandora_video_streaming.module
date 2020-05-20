@@ -4,7 +4,6 @@
  * @file
  * An extensible Islandora viewer module
  */
-
 /**
  * Change the islandora_video_admin form
  * islandora_video_streaming (module name) + 'form' + islandora_video_admin (form name) + 'alter'
@@ -62,7 +61,6 @@ function islandora_video_streaming_get_available_viewers() {
       return $b['module_weight'] - $a['module_weight'];
     }
   );
- 
   return $viewers;
 }
 
@@ -85,7 +83,3 @@ function islandora_video_streaming_islandora_video_admin_submit($form, &$form_st
       break;
   }
 }
-
-/*
- * 
- */
