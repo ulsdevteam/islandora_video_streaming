@@ -48,6 +48,7 @@ function islandora_video_streaming_panopto_islandora_sp_videoCModel_islandora_de
       'file' => drupal_get_path('module', 'islandora_video_streaming') . '/includes/panopto_derivatives.inc',
     );
   }
+  return $derivatives; 
 }
 
 /**
