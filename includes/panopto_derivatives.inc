@@ -10,8 +10,15 @@
 [5/19/20, 11:21:52 AM] Graham, Clinton T: Secret is:
 kukfAxIeR3WnnitXhZKduDyGGYUY1QskJEbEk87B3zQ=
  */
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
+use Aws\S3\ObjectUploader;
+use Aws\S3\MultipartUploader;
+use Aws\Exception\MultipartUploadException;
+
 function islandora_video_streaming_panopto_upload($object, $filePath) {
   if ($filePath || !isset($object['PANOPTO_INFO'])) {
+    module_load_include('inc', 'islandora_video', "includes/derivatives" );
     $archival_file = islandora_video_copy_obj_datastream($object);
     if ($archival_file === FALSE) {
       return islandora_video_no_obj_datastream($object->id);
@@ -26,7 +33,7 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
         'severity' => WATCHDOG_ERROR,
       ),
     );
-    
+    $streaming = array();
     //TODO: upload, record result in $streaming
     //1.Get token
     $oauthendpoint = variable_get('islandora_video_streaming_panopto_host', TRUE);
@@ -70,7 +77,7 @@ function islandora_video_streaming_panopto_get_token($oauthendpoint) {
   $token = null;
   
   if (isset($client_id) && isset($secret_client_id)) {
-    $authorization = base64_encode("$client_id:$client_secret");
+    $authorization = base64_encode("$client_id:$secret_client_id");
     $headers = array("Authorization: Basic {$authorization}", "Content-Type: application/x-www-form-urlencoded");
     $content = 'grant_type=password&username='.urlencode(strtolower($username)).'&password='.urlencode($password).'&scope=api';
     $response = request_curl($oauthendpoint, $headers, $content, 'POST', array(200 => 'access_token'));
@@ -99,3 +106,55 @@ function islandora_video_streaming_panopto_get_session($token, $uploadendpoint) 
   }
   return $session;
 }
+
+function request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect = array()) {
+  $cURL = curl_init();
+  curl_setopt($cURL, CURLOPT_URL, $endpoint);
+  curl_setopt($cURL, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($cURL, CURLOPT_HEADER, 1);
+  curl_setopt($cURL, CURLINFO_HEADER_OUT, true);
+  switch (strtoupper($type)) {
+    case 'POST':
+    curl_setopt($cURL, CURLOPT_POST, true);
+    break;
+    case 'PUT':
+    curl_setopt($cURL, CURLOPT_CUSTOMREQUEST, 'PUT');
+    break;
+  }
+  if ($content) {
+    curl_setopt($cURL, CURLOPT_POSTFIELDS, $content);
+  }
+  curl_setopt($cURL, CURLOPT_HTTPHEADER, $headers);
+  $response = curl_exec($cURL);
+  $header_size = curl_getinfo($cURL, CURLINFO_HEADER_SIZE);
+  $response_code = curl_getinfo($cURL, CURLINFO_RESPONSE_CODE);
+  $headerSent = curl_getinfo($cURL, CURLINFO_HEADER_OUT );
+  error_log('Sent:'."\n".$headerSent."\n".$content."\n");
+  curl_close($cURL);
+  if ($response === false) {
+    dpm('curl for '.$endpoint.' failed: '.curl_error($cURL));
+  } else {
+    $headers = substr($response, 0, $header_size);
+    $body = substr($response, $header_size);
+    if (empty($expect) || (isset($expect[$response_code]) && empty($expect[$response_code]))) {
+      return $body;
+    } else if (isset($expect[$response_code])) {
+      $expectation = $expect[$response_code];
+      $json = json_decode($body, true);
+      if (is_array($json)) {
+        if (isset($json[$expectation])) {
+          return $json;
+        } else {
+          dpm('JSON key from '.$endpoint.' ('.$expectation.') missing: '.$response);
+        }
+      } else {
+        dpm('Expected JSON from '.$endpoint.', but could not decode: '.$response);
+      }
+    } else {
+      dpm('Expected one of '.implode(',', array_keys($expect)).'; got a '.$response_code);
+    }
+  }
+  return;
+}
+
+

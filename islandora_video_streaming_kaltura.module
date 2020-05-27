@@ -38,7 +38,6 @@ function islandora_video_streaming_kaltura_islandora_viewer_info() {
  * 
 **/
 function islandora_video_streaming_kaltura_islandora_sp_videoCModel_islandora_derivative() {
-dpm('registering deriviative');
   $derivatives = array();
   if (variable_get('islandora_video_streaming_kaltura_make_derivative', false)) {
     $derivatives[] = array(
