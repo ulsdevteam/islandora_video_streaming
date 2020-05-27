@@ -84,4 +84,3 @@ function islandora_video_streaming_islandora_video_admin_submit($form, &$form_st
       break;
   }
 }
-
