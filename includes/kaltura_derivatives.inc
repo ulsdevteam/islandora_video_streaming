@@ -69,8 +69,20 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       $entity = kaltura_entry_create(array('kaltura_entryid' => $entry->id));
       kaltura_map_properties($entry, $entity);
 
-      kaltura_save_entry_metadata($entity);
+      $entity->kaltura_title = $object->id; 
+      $entity->kaltura_description = $object->label;
+      
       kaltura_entry_save($entity); //write entity to drupal db
+      
+      try {
+        $kaltura_baseEntry = new KalturaBaseEntry();
+        $kaltura_baseEntry->name = $object->id;
+        $kaltura_baseEntry->description = $object->label;
+        $updated_kaltura = $client->baseEntry->update($entry->id, $kaltura_baseEntry);
+      } catch (Exception $ex) {
+        $failureMessage['messages'][0]['message'] = t('Failed to update Kaltura title and description');
+        $failureMessage['messages'][0]['message_sub']['@exception'] = $ex->getMessage();
+      }
 
       $streaming['entry_id'] = $entry->id;
     } catch (Exception $e) {
