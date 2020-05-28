@@ -68,7 +68,6 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
 
       $entity = kaltura_entry_create(array('kaltura_entryid' => $entry->id));
       kaltura_map_properties($entry, $entity);
-
       $entity->kaltura_title = $object->id; 
       $entity->kaltura_description = $object->label;
       
