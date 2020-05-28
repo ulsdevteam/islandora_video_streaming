@@ -16,6 +16,11 @@ use Aws\S3\ObjectUploader;
 use Aws\S3\MultipartUploader;
 use Aws\Exception\MultipartUploadException;
 
+const MANIFEST_FILE_TEMPLATE = 'upload_manifest_template.xml';
+
+# Filename of manifest XML file. Any filename is acceptable.
+const MANIFEST_FILE_NAME = 'upload_manifest_generated.xml';
+
 function islandora_video_streaming_panopto_upload($object, $filePath) {
   if ($filePath || !isset($object['PANOPTO_INFO'])) {
     module_load_include('inc', 'islandora_video', "includes/derivatives" );
@@ -37,16 +42,20 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
     //TODO: upload, record result in $streaming
     //1.Get token
     $oauthendpoint = variable_get('islandora_video_streaming_panopto_host', TRUE);
+    $uploadendpoint = $oauthendpoint . '/Panopto/PublicAPI/Rest/sessionUpload';
     $oauthendpoint .= "/Panopto/oauth2/connect/token";
     $token = islandora_video_streaming_panopto_get_token($oauthendpoint);
     //2. Get session
-    $uploadendpoint = $oauthendpoint . '/Panopto/PublicAPI/Rest/sessionUpload';
-    
     $session = null;
     if ($token) {
-      $session = islandora_video_streaming_panopto_get_session($token, $uploadendpoint);
+      $session = islandora_video_streaming_panopto_get_session($token, $uploadendpoint); //session 404
+      error_log("token exists");
+    }
+    else {
+        error_log("token does not exist");
     }
     //3.Use S3 uploader
+   
     
     if ($streaming) {
        // Write the data to a temporary file.
@@ -156,5 +165,4 @@ function request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect
   }
   return;
 }
-
 
