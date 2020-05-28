@@ -68,10 +68,18 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
 
       $entity = kaltura_entry_create(array('kaltura_entryid' => $entry->id));
       kaltura_map_properties($entry, $entity);
-
-      kaltura_save_entry_metadata($entity);
+      
+      $form_state = array(
+        'eid' => $entry->id,
+        'values' => array(
+          'name'=> $object->id,
+          'desc'=> $object->label,
+          'tags' => null,
+        ),
+      );
       kaltura_entry_save($entity); //write entity to drupal db
-
+      kaltura_metadata_editor_form_submit(null, $form_state);
+      
       $streaming['entry_id'] = $entry->id;
     } catch (Exception $e) {
       $failureMessage['messages'][0]['message'] = t('Failed to upload object @pid to Kaltura, exception: @exception');
