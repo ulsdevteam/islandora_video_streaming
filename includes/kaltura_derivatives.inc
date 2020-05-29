@@ -38,7 +38,7 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
     $failureMessage = array(
       'success' => false,
       'messages' => array(
-         'message' => t('Failed to upload object @pid to Kaltura, but no exception caught.'),
+        'message' => t('Failed to upload object @pid to Kaltura, but no exception caught.'),
          'message_sub' => array('@pid' => $object->id),
          'type' => 'watchdog',
          'severity' => WATCHDOG_ERROR,
@@ -72,15 +72,20 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       $entity->kaltura_description = $object->label;
       
       kaltura_entry_save($entity); //write entity to drupal db
-      
+    
       try {
         $kaltura_baseEntry = new KalturaBaseEntry();
         $kaltura_baseEntry->name = $object->id;
         $kaltura_baseEntry->description = $object->label;
         $updated_kaltura = $client->baseEntry->update($entry->id, $kaltura_baseEntry);
-      } catch (Exception $ex) {
-        $failureMessage['messages'][0]['message'] = t('Failed to update Kaltura title and description');
-        $failureMessage['messages'][0]['message_sub']['@exception'] = $ex->getMessage();
+      } catch (Exception $e) {
+        $messages = array(
+          'message' => t('Failed to edit metadata in Kaltura'),
+          'message_sub' => array('@pid' => $object->id),
+          'type' => 'watchdog',
+          'severity' => WATCHDOG_ERROR,
+        );
+        $failureMessage['messages'][] = $messages;
       }
       
       $streaming['entry_id'] = $entry->id;

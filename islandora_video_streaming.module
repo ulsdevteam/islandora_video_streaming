@@ -81,6 +81,6 @@ function islandora_video_streaming_islandora_video_admin_submit($form, &$form_st
       foreach (array_keys(islandora_video_streaming_get_available_viewers()) as $k) {
         variable_del($k.'_make_derivative');
       }
-    break;
+      break;
   }
 }
