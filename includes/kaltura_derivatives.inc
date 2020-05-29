@@ -42,8 +42,8 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         'message_sub' => array('@pid' => $object->id),
         'type' => 'watchdog',
         'severity' => WATCHDOG_ERROR,
-       ),
-      );
+      ),
+    );
     $streaming = array();
      // See: kaltura/kaltura_upload.inc kaltura_uploader_form_submit
     try {
