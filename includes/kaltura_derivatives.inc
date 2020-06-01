@@ -51,7 +51,9 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         } catch (Exception $ex) {
           $messages = array(
             'message' => t('KalturaBaseEntry error: @exception'),
-            'message_sub' => array('@exception' => $ex->getMessage()),
+            'message_sub' => array(
+              '@exception' => $ex->getMessage()
+            ),
             'type' => 'watchdog',
             'severity' => WATCHDOG_ERROR,
           );
@@ -92,7 +94,10 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
     } catch (Exception $e) {
       $messages = array(
         'message' => t('Failed to upload object @pid to Kaltura, exception: @exception'),
-        'message_sub' => array('@exception' => $e->getMessage()),
+        'message_sub' => array(
+          '@pid' => $object->id,
+          '@exception' => $e->getMessage(),
+        ),
         'type' => 'watchdog',
         'severity' => WATCHDOG_ERROR,
       );
@@ -107,7 +112,10 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       if (file_put_contents($temp_name, json_encode($streaming)) === FALSE) {
         $messages = array(
           'message' => t('Failed to create temporary file @filename for object @pid when uploading to Kaltura.'),
-          'message_sub' => array('@filename' => $temp_name),
+          'message_sub' => array(
+            '@pid' => $object->id,
+            '@filename' => $temp_name,
+          ),
           'type' => 'watchdog',
           'severity' => WATCHDOG_ERROR,
         );
