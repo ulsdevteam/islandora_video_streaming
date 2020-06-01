@@ -35,6 +35,10 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
     }
     $filePath = drupal_realpath($archival_file['file']->uri); //copy of datastream
     drupal_load('module', 'kaltura');
+    $failureMessage = array(
+      'success' => false,
+      'messages' => array(),
+    );
     $streaming = array();
      // See: kaltura/kaltura_upload.inc kaltura_uploader_form_submit
     try {
