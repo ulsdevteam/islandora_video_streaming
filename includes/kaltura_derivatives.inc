@@ -80,8 +80,8 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         $updated_kaltura = $client->baseEntry->update($entry->id, $kaltura_baseEntry);
       } catch (Exception $e) {
         $messages = array(
-          'message' => t('Failed to edit metadata in Kaltura'),
-          'message_sub' => array(),
+          'message' => t('Failed to edit metadata of object @pid in Kaltura'),
+          'message_sub' => array('@pid' => $object->id),
           'type' => 'watchdog',
           'severity' => WATCHDOG_ERROR,
         );
