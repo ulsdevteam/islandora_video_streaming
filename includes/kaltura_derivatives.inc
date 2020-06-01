@@ -51,9 +51,7 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         } catch (Exception $ex) {
           $messages = array(
             'message' => t('KalturaBaseEntry error: @exception'),
-            'message_sub' => array(
-              '@exception' => $ex->getMessage()
-            ),
+            'message_sub' => array('@exception' => $ex->getMessage()),
             'type' => 'watchdog',
             'severity' => WATCHDOG_ERROR,
           );
