@@ -35,15 +35,6 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
     }
     $filePath = drupal_realpath($archival_file['file']->uri); //copy of datastream
     drupal_load('module', 'kaltura');
-    $failureMessage = array(
-      'success' => false,
-      'messages' => array(
-        'message' => t('Failed to upload object @pid to Kaltura, but no exception caught.'),
-        'message_sub' => array('@pid' => $object->id),
-        'type' => 'watchdog',
-        'severity' => WATCHDOG_ERROR,
-      ),
-    );
     $streaming = array();
      // See: kaltura/kaltura_upload.inc kaltura_uploader_form_submit
     try {
@@ -54,8 +45,16 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
           $myService = new KalturaBaseEntryService($client);
           $myService->delete($old_entity_id);
         } catch (Exception $ex) {
-          $failureMessage['messages'][0]['message'] = t('KalturaBaseEntry error: @exception');
-          $failureMessage['messages'][0]['message_sub']['@exception'] = $ex->getMessage();
+          $messages = array(
+            'message' => t('KalturaBaseEntry error: @exception'),
+            'message_sub' => array(
+              '@pid' => $object->id,
+              '@exception' => $ex->getMessage(),
+             ),
+            'type' => 'watchdog',
+            'severity' => WATCHDOG_ERROR,
+          );
+          $failureMessage['messages'][] = $messages;
           watchdog_exception('islandora_video_streaming_kaltura', $ex);
         }
       }
@@ -90,8 +89,16 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       
       $streaming['entry_id'] = $entry->id;
     } catch (Exception $e) {
-      $failureMessage['messages'][0]['message'] = t('Failed to upload object @pid to Kaltura, exception: @exception');
-      $failureMessage['messages'][0]['message_sub']['@exception'] = $e->getMessage();
+      $messages = array(
+        'message' => t('Failed to upload object @pid to Kaltura, exception: @exception'),
+        'message_sub' => array(
+          '@pid' => $object->id,
+          '@exception' => $e->getMessage(),
+        ),
+        'type' => 'watchdog',
+        'severity' => WATCHDOG_ERROR,
+      );
+      $failureMessage['messages'][] = $messages;
       watchdog_exception('islandora_video_streaming_kaltura', $e);
     }
       //Deletes tmp file
@@ -100,8 +107,16 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
       // Write the data to a temporary file.
       $temp_name = drupal_tempnam('temporary://', 'file');
       if (file_put_contents($temp_name, json_encode($streaming)) === FALSE) {
-        $failureMessage['messages'][0]['message'] = t('Failed to create temporary file @filename for object @pid when uploading to Kaltura.');
-        $failureMessage['messages'][0]['message_sub']['@filename'] = $temp_name;
+        $messages = array(
+          'message' => t('Failed to create temporary file @filename for object @pid when uploading to Kaltura.'),
+          'message_sub' => array(
+            '@pid' => $object->id,
+            '@filename' => $temp_name,
+          ),
+          'type' => 'watchdog',
+          'severity' => WATCHDOG_ERROR,
+        );
+        $failureMessage['messages'][] = $messages;
         return $failureMessage;
       }
       $result = islandora_video_add_datastream($object, 'KALTURA_STREAM', $temp_name);
