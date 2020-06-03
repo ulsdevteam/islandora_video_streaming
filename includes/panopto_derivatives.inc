@@ -4,12 +4,10 @@
  * Implement Panopto video upload  
  * @param AbstractObject $object An Islandora Object
  * @param String $filePath video file path
- * 
- * [5/19/20, 11:21:37 AM] Graham, Clinton T: Client ID is:
-3941e4a4-bba8-46e3-a113-aaf600fd8ca3
-[5/19/20, 11:21:52 AM] Graham, Clinton T: Secret is:
-kukfAxIeR3WnnitXhZKduDyGGYUY1QskJEbEk87B3zQ=
  */
+libraries_load('aws'); //aws info file needs to be created in library and aws 
+//library downloaded
+
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 use Aws\S3\ObjectUploader;
@@ -48,14 +46,30 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
     //2. Get session
     $session = null;
     if ($token) {
-      $session = islandora_video_streaming_panopto_get_session($token, $uploadendpoint); //session 404
-      error_log("token exists");
+      $session = islandora_video_streaming_panopto_get_session($token, $uploadendpoint); 
+      dpm('$token exists');
     }
     else {
         error_log("token does not exist");
     }
     //3.Use S3 uploader
-   
+    if ($session) {
+      dpm('$session exists');
+      try {
+        $upload_id = $session['ID'];
+        $upload_target = $session['UploadTarget'];
+        $FILEPATH = $filePath;
+        upload_file($upload_target, $FILEPATH);
+        $template = create_manifest_for_video($FILEPATH, MANIFEST_FILE_NAME);
+        upload_manifest_file($upload_target, $template);
+        
+        finish_upload($uploadendpoint, $session, $token);
+        
+        $streaming['upload_id'] = $session['ID'];
+      } catch (Exception $ex) {
+
+      }
+    }
     
     if ($streaming) {
        // Write the data to a temporary file.
@@ -73,7 +87,7 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
 }
 
 /*
- * Requests token 
+ * Requests token and hopefully returns token
  * @param String $oauthendpoint 
  */
 function islandora_video_streaming_panopto_get_token($oauthendpoint) {
@@ -116,6 +130,13 @@ function islandora_video_streaming_panopto_get_session($token, $uploadendpoint) 
   return $session;
 }
 
+/*
+ * @param $endpoint
+ * @param $headers
+ * @param $content
+ * @param $type
+ * @param $expect
+ */
 function request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect = array()) {
   $cURL = curl_init();
   curl_setopt($cURL, CURLOPT_URL, $endpoint);
@@ -154,6 +175,7 @@ function request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect
         if (isset($json[$expectation])) {
           return $json;
         } else {
+          //change this to failureMessage
           dpm('JSON key from '.$endpoint.' ('.$expectation.') missing: '.$response);
         }
       } else {
@@ -166,3 +188,135 @@ function request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect
   return;
 }
 
+/*
+ * Uploads file to Panopto using AWS S3 Uploader
+ * @param $upload_target - url of upload target
+ * @param $file_path - path of object
+ */
+function upload_file($upload_target, $file_path) {
+  $element = explode("/", $upload_target);
+  $prefix = array_pop($element);
+  $service_endpoint = implode("/", $element);
+  $bucket = array_pop($element);
+  $object_key = $prefix."/".$file_path;
+  
+  $s3Client = new S3Client([
+      'endpoint' => $service_endpoint,
+      'region'  => 'us-east-1',
+      'version' => '2006-03-01',
+      'credentials' => [
+        'key'    => 'dummy',
+        'secret' => 'dummy'
+    ]
+  ]);
+  $source = fopen($file_path, 'rb');
+  $uploader = new ObjectUploader(
+    $s3Client,
+    $bucket,
+    $object_key,
+    $source
+  );
+
+  do {
+    try {
+      $result = $uploader->upload();
+      if ($result["@metadata"]["statusCode"] == '200') {
+        dpm('<p>File successfully uploaded to ' . $result["ObjectURL"] . '.</p>');
+      }
+      dpm($result);
+    } catch (Exception $ex) {
+      rewind($source);
+          $uploader = new MultipartUploader($s3Client, $source, [
+              'state' => $ex->getState(),
+          ]);
+    }
+  } while (!isset($result));
+}
+
+/*
+ * Manifest file creation needed for Panopto Video Upload
+ * @param $file_path
+ * @param $manifest_file_name
+ */
+function create_manifest_for_video($file_path = null, $manifest_file_name=null) {
+  $file_name = basename($file_path);
+
+  $template = file_get_contents('https://raw.githubusercontent.com/Panopto/upload-python-sample/master/simplest/upload_manifest_template.xml');
+  $template = str_replace("{Title}", $file_name, $template);
+  $template = str_replace("{Description}", 'This is a video session with the uploaded video file '.$file_name, $template);
+  $template = str_replace("{Filename}", $file_path, $template);
+  $template = str_replace("{Date}", date('Y-m-d H:i:s'), $template);
+  
+  $finished = 'Finished generated .xml file';
+  file_put_contents($manifest_file_name, $template);
+  return $template;
+}
+
+/*
+ * Finishes upload
+ * @param $baseUrl
+ * @param $session_upload
+ * @param $token
+ */
+function finish_upload($baseUrl, $session_upload, $token) {
+ $upload_id = $session_upload['ID'];
+ $upload_target = $session_upload['UploadTarget'];
+  
+ $url = $baseUrl."/".$upload_id;
+ $payload = $session_upload;
+ $payload['State'] = 1;
+ $headers = array("Authorization: Bearer {$token}", "Content-Type: application/json");
+
+
+ $resp = request_curl($url, $headers, json_encode($payload), 'PUT');
+}
+
+
+/*
+ * Uploads manifest file 
+ * @param $UploadTarget 
+ * @param $file_path
+ */
+function upload_manifest_file($UploadTarget, $file_path) {
+  $element = explode("/", $UploadTarget);
+  $prefix = array_pop($element);
+  $service_endpoint = implode("/", $element);
+  $bucket = array_pop($element);
+  $object_key = $prefix."/".MANIFEST_FILE_NAME;
+  
+
+  // Create an S3Client
+  $s3Client = new S3Client([
+      'endpoint' => $service_endpoint,
+      'region'  => 'us-east-1',
+      'version' => '2006-03-01',
+      'credentials' => [
+        'key'    => 'dummy',
+        'secret' => 'dummy'
+    ]
+  ]);
+
+  // Use multipart upload
+  $source = $file_path;//$file_path;//'earth.mp4';//'/path/to/large/file.zip';
+  $uploader = new ObjectUploader(
+    $s3Client,
+    $bucket,
+    $object_key,
+    $source
+  );
+
+  do {
+      try {
+          $result = $uploader->upload();
+          if ($result["@metadata"]["statusCode"] == '200') {
+              dpm('<p>File successfully uploaded to ' . $result["ObjectURL"] . '.</p>');
+          }
+          echo($result["@metadata"]["statusCode"]);
+      } catch (MultipartUploadException $e) {
+          rewind($source);
+          $uploader = new MultipartUploader($s3Client, $source, [
+              'state' => $e->getState(),
+          ]);
+      }
+  } while (!isset($result));
+}
