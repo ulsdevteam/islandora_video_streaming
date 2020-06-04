@@ -10,6 +10,7 @@ This file describes installation instructions for the AWS library needed within 
 
 3. Create an info file within /sites/all/libraries named "aws.libraries.info". 
     Info file should contain: 
+    
     name = aws
     machine name = aws
     description = Provides aws api for Panopto
