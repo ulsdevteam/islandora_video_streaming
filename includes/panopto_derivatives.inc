@@ -5,8 +5,7 @@
  * @param AbstractObject $object An Islandora Object
  * @param String $filePath video file path
  */
-libraries_load('aws'); //aws info file needs to be created in library and aws 
-//library downloaded
+libraries_load('aws'); 
 
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
@@ -39,7 +38,7 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
     $streaming = array();
     //TODO: upload, record result in $streaming
     //1.Get token
-    $oauthendpoint = variable_get('islandora_video_streaming_panopto_host', TRUE);
+    $oauthendpoint = variable_get('islandora_video_streaming_panopto_host');
     $uploadendpoint = $oauthendpoint . '/Panopto/PublicAPI/Rest/sessionUpload';
     $oauthendpoint .= "/Panopto/oauth2/connect/token";
     $token = islandora_video_streaming_panopto_get_token($oauthendpoint);
@@ -70,7 +69,6 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
 
       }
     }
-    
     if ($streaming) {
        // Write the data to a temporary file.
       $temp_name = drupal_tempnam('temporary://', 'file');
@@ -91,10 +89,10 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
  * @param String $oauthendpoint 
  */
 function islandora_video_streaming_panopto_get_token($oauthendpoint) {
-  $client_id = variable_get('islandora_video_streaming_panopto_client_id', TRUE);
-  $secret_client_id = variable_get('islandora_video_streaming_panopto_secret_client_id', TRUE);
-  $username = variable_get('islandora_video_streaming_panopto_username', TRUE);
-  $password = variable_get('islandora_video_streaming_panopto_password', TRUE);
+  $client_id = variable_get('islandora_video_streaming_panopto_client_id');
+  $secret_client_id = variable_get('islandora_video_streaming_panopto_secret_client_id');
+  $username = variable_get('islandora_video_streaming_panopto_username');
+  $password = variable_get('islandora_video_streaming_panopto_password');
   
   $response = null;
   $token = null;
@@ -119,7 +117,7 @@ function islandora_video_streaming_panopto_get_token($oauthendpoint) {
 function islandora_video_streaming_panopto_get_session($token, $uploadendpoint) {
   $session = null;
   $headers = array("Authorization: Bearer {$token}", "Content-Type: application/json");
-  $folder_id = variable_get('islandora_video_streaming_panopto_folder_id', TRUE);
+  $folder_id = variable_get('islandora_video_streaming_panopto_folder_id');
   $content = json_encode(array(
     'FolderId' => $folder_id,
   ));
@@ -137,7 +135,7 @@ function islandora_video_streaming_panopto_get_session($token, $uploadendpoint) 
  * @param $type
  * @param $expect
  */
-function request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect = array()) {
+function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect = array()) {
   $cURL = curl_init();
   curl_setopt($cURL, CURLOPT_URL, $endpoint);
   curl_setopt($cURL, CURLOPT_RETURNTRANSFER, true);
@@ -193,7 +191,7 @@ function request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect
  * @param $upload_target - url of upload target
  * @param $file_path - path of object
  */
-function upload_file($upload_target, $file_path) {
+function islandora_video_streaming_panopto_upload_file($upload_target, $file_path) {
   $element = explode("/", $upload_target);
   $prefix = array_pop($element);
   $service_endpoint = implode("/", $element);
@@ -238,7 +236,7 @@ function upload_file($upload_target, $file_path) {
  * @param $file_path
  * @param $manifest_file_name
  */
-function create_manifest_for_video($file_path = null, $manifest_file_name=null) {
+function islandora_video_streaming_panopto_create_manifest_for_video($file_path = null, $manifest_file_name=null) {
   $file_name = basename($file_path);
 
   $template = file_get_contents('https://raw.githubusercontent.com/Panopto/upload-python-sample/master/simplest/upload_manifest_template.xml');
@@ -258,7 +256,7 @@ function create_manifest_for_video($file_path = null, $manifest_file_name=null) 
  * @param $session_upload
  * @param $token
  */
-function finish_upload($baseUrl, $session_upload, $token) {
+function islandora_video_streaming_panopto_finish_upload($baseUrl, $session_upload, $token) {
  $upload_id = $session_upload['ID'];
  $upload_target = $session_upload['UploadTarget'];
   
@@ -277,7 +275,7 @@ function finish_upload($baseUrl, $session_upload, $token) {
  * @param $UploadTarget 
  * @param $file_path
  */
-function upload_manifest_file($UploadTarget, $file_path) {
+function islandora_video_streaming_panopto_upload_manifest_file($UploadTarget, $file_path) {
   $element = explode("/", $UploadTarget);
   $prefix = array_pop($element);
   $service_endpoint = implode("/", $element);
