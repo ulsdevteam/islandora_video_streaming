@@ -5,6 +5,8 @@
  * @param AbstractObject $object An Islandora Object
  * @param String $filePath video file path
  */
+
+
 libraries_load('aws'); 
 
 use Aws\S3\S3Client;
@@ -58,15 +60,15 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
         $upload_id = $session['ID'];
         $upload_target = $session['UploadTarget'];
         $FILEPATH = $filePath;
-        upload_file($upload_target, $FILEPATH);
-        $template = create_manifest_for_video($FILEPATH, MANIFEST_FILE_NAME);
-        upload_manifest_file($upload_target, $template);
+        islandora_video_streaming_panopto_upload_file($upload_target, $FILEPATH);
+        $template = islandora_video_streaming_panopto_create_manifest_for_video($FILEPATH, MANIFEST_FILE_NAME);
+        islandora_video_streaming_panopto_upload_manifest_file($upload_target, $template);
         
-        finish_upload($uploadendpoint, $session, $token);
+        islandora_video_streaming_panopto_finish_upload($uploadendpoint, $session, $token);
         
         $streaming['upload_id'] = $session['ID'];
       } catch (Exception $ex) {
-
+        dpm("$ex");
       }
     }
     if ($streaming) {
@@ -101,7 +103,7 @@ function islandora_video_streaming_panopto_get_token($oauthendpoint) {
     $authorization = base64_encode("$client_id:$secret_client_id");
     $headers = array("Authorization: Basic {$authorization}", "Content-Type: application/x-www-form-urlencoded");
     $content = 'grant_type=password&username='.urlencode(strtolower($username)).'&password='.urlencode($password).'&scope=api';
-    $response = request_curl($oauthendpoint, $headers, $content, 'POST', array(200 => 'access_token'));
+    $response = islandora_video_streaming_panopto_request_curl($oauthendpoint, $headers, $content, 'POST', array(200 => 'access_token'));
   }
   if ($response) {
     $token = $response['access_token'];
@@ -121,7 +123,7 @@ function islandora_video_streaming_panopto_get_session($token, $uploadendpoint) 
   $content = json_encode(array(
     'FolderId' => $folder_id,
   ));
-  $response = request_curl($uploadendpoint, $headers, $content, 'POST', array(201 => 'ID'));
+  $response = islandora_video_streaming_panopto_request_curl($uploadendpoint, $headers, $content, 'POST', array(201 => 'ID'));
   if ($response) {
     $session = $response;
   }
@@ -266,7 +268,7 @@ function islandora_video_streaming_panopto_finish_upload($baseUrl, $session_uplo
  $headers = array("Authorization: Bearer {$token}", "Content-Type: application/json");
 
 
- $resp = request_curl($url, $headers, json_encode($payload), 'PUT');
+ $resp = islandora_video_streaming_panopto_request_curl($url, $headers, json_encode($payload), 'PUT');
 }
 
 

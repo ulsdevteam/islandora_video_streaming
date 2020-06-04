@@ -18,6 +18,6 @@ This file describes installation instructions for the AWS library needed within 
 
     *note info file should not be inside /sites/all/libraries/aws
 
-4. Add "dependencies[] = libraries" to "islandora_video_streaming_panopto.info" (and any other module info file using AWS library)
+4. Add "dependencies[] = libraries" to "islandora_video_streaming_panopto.info" (and any other module info file using AWS SDK)
 
 5. Insert "libraries_load('aws')" to the beginning of code file which uses it.

@@ -73,4 +73,18 @@ function islandora_video_streaming_panopto_process_islandora_video($variables = 
   }
 }
 
-
+function islandora_video_streaming_panopto_libraries_info() {
+  $libraries['aws'] = array(
+    'name' => 'aws library', 
+    'vendor url' => 'https://aws.amazon.com/', 
+    'download url' => 'https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.zip', 
+    'version arguments' => array(
+      'file' => 'README.md',
+      'pattern' => '/Version (\d+)/', 
+    ), 
+    'files' => array(
+      'php' => array('aws-autoloader.php'),
+    ),
+  );
+  return $libraries;
+}
