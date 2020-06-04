@@ -12,9 +12,13 @@ This file describes installation instructions for the AWS library needed within 
     Info file should contain: 
     
     name = aws
+    
     machine name = aws
+    
     description = Provides aws api for Panopto
+    
     version = 3
+    
     files[php][] =aws-autoloader.php
 
     *note info file should not be inside /sites/all/libraries/aws
