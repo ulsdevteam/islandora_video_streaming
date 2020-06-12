@@ -81,4 +81,56 @@ function islandora_video_streaming_kaltura_process_islandora_video($variables = 
   }
 }
 
+/*
+ * Implements hook_islandora_datastream_alter().
+ */
+function islandora_video_streaming_kaltura_islandora_object_alter(AbstractObject $object, &$context) {
+  if (isset($object['KALTURA_STREAM']) && ($context['action'] == 'purge' || $context['action'] == 'delete' )) {
+    $object_content = $object['KALTURA_STREAM']->content;
+    $decoded = json_decode($object_content, true);
+    if ($decoded !== null) {
+      $entity = kaltura_entry_load($decoded['entry_id']);
+      if ($entity !== False) {
+        $kaltura_entity_id = entity_id('kaltura_entry', $entity);
+        kaltura_entry_delete($kaltura_entity_id);
+        //Deletes from Kaltura server
+        $helpers = new KalturaHelpers();
+        $client = $helpers->getKalturaClient();
+        try {
+          $myService = new KalturaBaseEntryService($client);
+          $myService->delete($kaltura_entity_id);
+        } catch(Exceptions $e) {
+          watchdog_exception('islandora_video_streaming_kaltura', $e);
+        }
+      }
+    }
+  }
+}
+
+/*
+ * Implements hook_islandora_datastream_alter().
+ */
+function islandora_video_streaming_kaltura_islandora_datastream_alter(AbstractObject $object, AbstractDatastream $datastream, &$context) {
+  if (isset($object['KALTURA_STREAM']) && ($context['action'] == 'purge' || $context['action'] == 'delete' )) {
+    $datastream_content = $object['KALTURA_STREAM']->content;
+    $decoded = json_decode($datastream_content, true);
+    if ($decoded !== null) {
+      $entity = kaltura_entry_load($decoded['entry_id']);
+      if ($entity !== False) {
+        $kaltura_entity_id = entity_id('kaltura_entry', $entity);
+        kaltura_entry_delete($kaltura_entity_id);
+        //Deletes from Kaltura server
+        $helpers = new KalturaHelpers();
+        $client = $helpers->getKalturaClient();
+        try {
+          $myService = new KalturaBaseEntryService($client);
+          $myService->delete($kaltura_entity_id);
+        } catch(Exceptions $e) {
+          watchdog_exception('islandora_video_streaming_kaltura', $e);
+        }
+      }
+    }  
+  }
+}
+
 
