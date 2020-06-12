@@ -71,7 +71,25 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
 
       kaltura_save_entry_metadata($entity);
       kaltura_entry_save($entity); //write entity to drupal db
+<<<<<<< HEAD
 
+=======
+      kaltura_metadata_editor_form_submit(null, $form_state);
+      try {
+        $kaltura_baseEntry = new KalturaBaseEntry();
+        $kaltura_baseEntry->name = $object->id;
+        $kaltura_baseEntry->description = $object->label;
+        $updated_kaltura = $client->baseEntry->update($entry->id, $kaltura_baseEntry);
+      } catch (Exception $e) {
+        $messages = array(
+          'message' => t('Failed to edit metadata of object @pid in Kaltura'),
+          'message_sub' => array('@pid' => $object->id),
+          'type' => 'watchdog',
+          'severity' => WATCHDOG_ERROR,
+        );
+        $failureMessage['messages'][] = $messages;
+      }
+>>>>>>> 1e31699... Implemented hook_islandora_object_alter() and hook_islandora_datastream_alter() for
       $streaming['entry_id'] = $entry->id;
     } catch (Exception $e) {
       $failureMessage['messages'][0]['message'] = t('Failed to upload object @pid to Kaltura, exception: @exception');
