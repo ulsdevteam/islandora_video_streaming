@@ -15,8 +15,6 @@ use Aws\S3\ObjectUploader;
 use Aws\S3\MultipartUploader;
 use Aws\Exception\MultipartUploadException;
 
-const MANIFEST_FILE_TEMPLATE = 'upload_manifest_template.xml';
-
 # Filename of manifest XML file. Any filename is acceptable.
 const MANIFEST_FILE_NAME = 'upload_manifest_generated.xml';
 
@@ -53,20 +51,23 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
     else {
         error_log("token does not exist");
     }
+    $success = false;
     //3.Use S3 uploader
     if ($session) {
       dpm('$session exists');
       try {
         $upload_id = $session['ID'];
         $upload_target = $session['UploadTarget'];
-        $FILEPATH = $filePath;
+        $file_uri = explode("/", $filePath);
+        $FILEPATH = end($file_uri);
+        islandora_video_streaming_panopto_create_manifest_for_video($FILEPATH, MANIFEST_FILE_NAME);
+        islandora_video_streaming_panopto_upload_file($upload_target, MANIFEST_FILE_NAME);
         islandora_video_streaming_panopto_upload_file($upload_target, $FILEPATH);
-        $template = islandora_video_streaming_panopto_create_manifest_for_video($FILEPATH, MANIFEST_FILE_NAME);
-        islandora_video_streaming_panopto_upload_manifest_file($upload_target, $template);
-        
+
         islandora_video_streaming_panopto_finish_upload($uploadendpoint, $session, $token);
-        
+        $success = monitor_progress($uploadendpoint, $upload_id, $token);
         $streaming['upload_id'] = $session['ID'];
+        dpm($success);
       } catch (Exception $ex) {
         dpm("$ex");
       }
@@ -200,15 +201,18 @@ function islandora_video_streaming_panopto_upload_file($upload_target, $file_pat
   $bucket = array_pop($element);
   $object_key = $prefix."/".$file_path;
   
-  $s3Client = new S3Client([
+  $s3Params = array(
       'endpoint' => $service_endpoint,
       'region'  => 'us-east-1',
       'version' => '2006-03-01',
       'credentials' => [
         'key'    => 'dummy',
         'secret' => 'dummy'
-    ]
-  ]);
+      ]
+  );
+  // Create an S3Client
+  $s3Client = new S3Client($s3Params);
+
   $source = fopen($file_path, 'rb');
   $uploader = new ObjectUploader(
     $s3Client,
@@ -225,10 +229,7 @@ function islandora_video_streaming_panopto_upload_file($upload_target, $file_pat
       }
       dpm($result);
     } catch (Exception $ex) {
-      rewind($source);
-          $uploader = new MultipartUploader($s3Client, $source, [
-              'state' => $ex->getState(),
-          ]);
+      dpm($ex);
     }
   } while (!isset($result));
 }
@@ -245,11 +246,9 @@ function islandora_video_streaming_panopto_create_manifest_for_video($file_path 
   $template = str_replace("{Title}", $file_name, $template);
   $template = str_replace("{Description}", 'This is a video session with the uploaded video file '.$file_name, $template);
   $template = str_replace("{Filename}", $file_path, $template);
-  $template = str_replace("{Date}", date('Y-m-d H:i:s'), $template);
+  $template = str_replace("{Date}", date('c'), $template);
   
-  $finished = 'Finished generated .xml file';
-  file_put_contents($manifest_file_name, $template);
-  return $template;
+  $finished = file_put_contents(MANIFEST_FILE_NAME, $template);
 }
 
 /*
@@ -267,56 +266,32 @@ function islandora_video_streaming_panopto_finish_upload($baseUrl, $session_uplo
  $payload['State'] = 1;
  $headers = array("Authorization: Bearer {$token}", "Content-Type: application/json");
 
-
  $resp = islandora_video_streaming_panopto_request_curl($url, $headers, json_encode($payload), 'PUT');
 }
 
-
-/*
- * Uploads manifest file 
- * @param $UploadTarget 
- * @param $file_path
- */
-function islandora_video_streaming_panopto_upload_manifest_file($UploadTarget, $file_path) {
-  $element = explode("/", $UploadTarget);
-  $prefix = array_pop($element);
-  $service_endpoint = implode("/", $element);
-  $bucket = array_pop($element);
-  $object_key = $prefix."/".MANIFEST_FILE_NAME;
-  
-
-  // Create an S3Client
-  $s3Client = new S3Client([
-      'endpoint' => $service_endpoint,
-      'region'  => 'us-east-1',
-      'version' => '2006-03-01',
-      'credentials' => [
-        'key'    => 'dummy',
-        'secret' => 'dummy'
-    ]
-  ]);
-
-  // Use multipart upload
-  $source = $file_path;//$file_path;//'earth.mp4';//'/path/to/large/file.zip';
-  $uploader = new ObjectUploader(
-    $s3Client,
-    $bucket,
-    $object_key,
-    $source
-  );
-
-  do {
-      try {
-          $result = $uploader->upload();
-          if ($result["@metadata"]["statusCode"] == '200') {
-              dpm('<p>File successfully uploaded to ' . $result["ObjectURL"] . '.</p>');
-          }
-          echo($result["@metadata"]["statusCode"]);
-      } catch (MultipartUploadException $e) {
-          rewind($source);
-          $uploader = new MultipartUploader($s3Client, $source, [
-              'state' => $e->getState(),
-          ]);
+function monitor_progress($baseUrl, $upload_id, $token) {
+  while(1){
+      sleep(5);
+      error_log( "Calling PUT PublicAPI/REST/sessionUpload/$upload_id endpoint");
+      $url = $baseUrl."/".$upload_id;
+      $headers = array("Authorization: Bearer {$token}", "Content-Type: application/json");
+      $resp = islandora_video_streaming_panopto_request_curl($url, $headers);
+      error_log( "=======Response======");
+      $response = json_decode($resp, true);
+      error_log(var_export($response, true));
+      if ($response['State'] === 0) {
+          error_log( "...Retrying");
+          # If we get Unauthorized and token is refreshed, ignore the response at this time and wait for next time.
+          continue;
       }
-  } while (!isset($result));
+    break;
+  }
+  switch ($response['State']) {
+    case 1:
+    case 3:
+    case 4:
+      return true;
+    default:
+      return false;
+  }
 }
