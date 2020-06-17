@@ -80,11 +80,3 @@ function islandora_video_streaming_kaltura_process_islandora_video($variables = 
     }
   }
 }
-
-/**
- * datastream  deletion hook - inspect object, is this datastream part of my module
- * if yes, shouldi delete it 
- * object deletion hook
- * -does module have datastream, if nto then delete coreesponding data from server
- */
-

@@ -122,7 +122,7 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
 }
 
 /*
- * Requests token and hopefully returns token
+ * Requests token and returns token
  * @param String $oauthendpoint 
  */
 function islandora_video_streaming_panopto_get_token($oauthendpoint) {
@@ -147,7 +147,7 @@ function islandora_video_streaming_panopto_get_token($oauthendpoint) {
 }
 
 /*
- * Gets session needed for upload
+ * Retrieves session needed for upload
  * @param $token
  * @param $uploadendpoint
  */
@@ -295,7 +295,7 @@ function islandora_video_streaming_panopto_upload_file($upload_target, $file_pat
 }
 
 /*
- * Manifest file creation needed for Panopto Video Upload
+ * Creates manifest file, in temporary storage, needed for Panopto Video Upload
  * @param $file_path
  * @param $manifest_file_name
  */
@@ -329,6 +329,12 @@ function islandora_video_streaming_panopto_finish_upload($baseUrl, $session_uplo
  $resp = islandora_video_streaming_panopto_request_curl($url, $headers, json_encode($payload), 'PUT');
 }
 
+/*
+ * Monitors progress made by Uploader
+ * @param $baseUrl
+ * @param $upload_id
+ * @param $token
+ */
 function monitor_progress($baseUrl, $upload_id, $token) {
   while(1){
       sleep(5);
