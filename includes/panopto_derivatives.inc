@@ -16,7 +16,7 @@ use Aws\S3\MultipartUploader;
 use Aws\Exception\MultipartUploadException;
 
 # Filename of manifest XML file. Any filename is acceptable.
-const MANIFEST_FILE_NAME = 'upload_manifest_generated.xml';
+const MANIFEST_FILE_NAME = '/tmp/upload_manifest_generated.xml';
 
 function islandora_video_streaming_panopto_upload($object, $filePath) {
   if ($filePath || !isset($object['PANOPTO_INFO'])) {
@@ -59,10 +59,10 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
         $upload_id = $session['ID'];
         $upload_target = $session['UploadTarget'];
         $file_uri = explode("/", $filePath);
-        $FILEPATH = end($file_uri);
-        islandora_video_streaming_panopto_create_manifest_for_video($FILEPATH, MANIFEST_FILE_NAME);
+        $FILENAME = end($file_uri);
+        islandora_video_streaming_panopto_create_manifest_for_video($filePath, MANIFEST_FILE_NAME);
         islandora_video_streaming_panopto_upload_file($upload_target, MANIFEST_FILE_NAME);
-        islandora_video_streaming_panopto_upload_file($upload_target, $FILEPATH);
+        islandora_video_streaming_panopto_upload_file($upload_target, $filePath);
 
         islandora_video_streaming_panopto_finish_upload($uploadendpoint, $session, $token);
         $success = monitor_progress($uploadendpoint, $upload_id, $token);
@@ -72,6 +72,7 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
         dpm("$ex");
       }
     }
+    file_delete($archival_file['file'], true);
     if ($streaming) {
        // Write the data to a temporary file.
       $temp_name = drupal_tempnam('temporary://', 'file');
@@ -199,7 +200,8 @@ function islandora_video_streaming_panopto_upload_file($upload_target, $file_pat
   $prefix = array_pop($element);
   $service_endpoint = implode("/", $element);
   $bucket = array_pop($element);
-  $object_key = $prefix."/".$file_path;
+  $file_name = basename($file_path);
+  $object_key = $prefix."/".$file_name;
   
   $s3Params = array(
       'endpoint' => $service_endpoint,
@@ -245,7 +247,7 @@ function islandora_video_streaming_panopto_create_manifest_for_video($file_path 
   $template = file_get_contents('https://raw.githubusercontent.com/Panopto/upload-python-sample/master/simplest/upload_manifest_template.xml');
   $template = str_replace("{Title}", $file_name, $template);
   $template = str_replace("{Description}", 'This is a video session with the uploaded video file '.$file_name, $template);
-  $template = str_replace("{Filename}", $file_path, $template);
+  $template = str_replace("{Filename}", $file_name, $template);
   $template = str_replace("{Date}", date('c'), $template);
   
   $finished = file_put_contents(MANIFEST_FILE_NAME, $template);
