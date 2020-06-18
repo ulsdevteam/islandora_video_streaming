@@ -8,6 +8,4 @@ This file describes installation instructions for the AWS library needed within 
 
 2. Extract zip into /sites/all/libraries 
 
-3. Add "dependencies[] = libraries" to "islandora_video_streaming_panopto.info" (and any other module info file using AWS library)
 
-4. Insert "libraries_load('aws')" to the beginning of code file which uses it.

@@ -15,11 +15,14 @@ use Aws\S3\ObjectUploader;
 use Aws\S3\MultipartUploader;
 use Aws\Exception\MultipartUploadException;
 
-# Filename of manifest XML file. Any filename is acceptable.
-const MANIFEST_FILE_NAME = '/tmp/upload_manifest_generated.xml';
-
+/**
+ * Implement Panopto video upload  
+ * @param AbstractObject $object An Islandora Object
+ * @param $filePath path of object
+ * @param
+ */
 function islandora_video_streaming_panopto_upload($object, $filePath) {
-  if ($filePath || !isset($object['PANOPTO_INFO'])) {
+  if ($filePath) {
     module_load_include('inc', 'islandora_video', "includes/derivatives" );
     $archival_file = islandora_video_copy_obj_datastream($object);
     if ($archival_file === FALSE) {
@@ -40,43 +43,32 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
     if ($token) {
       $session = islandora_video_streaming_panopto_get_session($token, $uploadendpoint); 
     }
-    else {
-      $messages = array(
-        'message' => t('Failed to retrieve token for object: @pid'),
-        'message_sub' => array('@pid' => $object->id),
-        'type' => 'watchdog',
-        'severity' => WATCHDOG_ERROR,
-      );
-      $failureMessage['messages'][] = $messages;
-      return $failureMessage;
-    }
     $success = false;
     if ($session) {
       try {
         $upload_id = $session['ID'];
         $upload_target = $session['UploadTarget'];
-        $file_uri = explode("/", $filePath);
-        $FILENAME = end($file_uri);
-        
-        islandora_video_streaming_panopto_create_manifest_for_video($filePath, MANIFEST_FILE_NAME);
-        islandora_video_streaming_panopto_upload_file($upload_target, MANIFEST_FILE_NAME);
-        islandora_video_streaming_panopto_upload_file($upload_target, $filePath);
-        islandora_video_streaming_panopto_finish_upload($uploadendpoint, $session, $token);
-        
-        try {
-          $success = monitor_progress($uploadendpoint, $upload_id, $token);
-        } catch (Exception $ex) {
-          $messages = array(
-          'message' => t('Panopto progress error: @exception'),
-          'message_sub' => array('@exception' => $ex->getMessage()),
-          'type' => 'watchdog',
-          'severity' => WATCHDOG_ERROR,
-          );
-          $failureMessage['messages'][] = $messages;
-          watchdog_exception('islandora_video_streaming_panopto', $ex);
-          return $failureMessage;
+
+        $manifest_file = islandora_video_streaming_panopto_create_manifest_for_video($filePath);
+        if (isset($manifest_file)) {
+          islandora_video_streaming_panopto_upload_file($upload_target, $manifest_file);
+          islandora_video_streaming_panopto_upload_file($upload_target, $filePath);
+          islandora_video_streaming_panopto_finish_upload($uploadendpoint, $session, $token);
+          try {
+            $success = monitor_progress($uploadendpoint, $upload_id, $token);
+          } catch (Exception $ex) {
+            $messages = array(
+            'message' => t('Panopto progress error: @exception'),
+            'message_sub' => array('@exception' => $ex->getMessage()),
+            'type' => 'watchdog',
+            'severity' => WATCHDOG_ERROR,
+            );
+            $failureMessage['messages'][] = $messages;
+            watchdog_exception('islandora_video_streaming_panopto', $ex);
+            return $failureMessage;
+          }
+          $streaming['upload_id'] = $session['ID'];
         }
-        $streaming['upload_id'] = $session['ID'];
       } catch (Exception $ex) {
         $messages = array(
           'message' => t('Panopto upload error: @exception'),
@@ -95,7 +87,6 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
         'severity' => WATCHDOG_ERROR,
       );
       $failureMessage['messages'][] = $messages;
-      return $failureMessage;
     }
     file_delete($archival_file['file'], true);
     if ($streaming) {
@@ -123,7 +114,8 @@ function islandora_video_streaming_panopto_upload($object, $filePath) {
 
 /*
  * Requests token and returns token
- * @param String $oauthendpoint 
+ * @param string $oauthendpoint url needed for authentication 
+ * @return string token retrieved from server
  */
 function islandora_video_streaming_panopto_get_token($oauthendpoint) {
   $client_id = variable_get('islandora_video_streaming_panopto_client_id');
@@ -148,8 +140,9 @@ function islandora_video_streaming_panopto_get_token($oauthendpoint) {
 
 /*
  * Retrieves session needed for upload
- * @param $token
- * @param $uploadendpoint
+ * @param string $token token retrieved from 
+ * @param string $uploadendpoint url for upload
+ * @return array session retrieved from server
  */
 function islandora_video_streaming_panopto_get_session($token, $uploadendpoint) {
   $session = null;
@@ -165,7 +158,7 @@ function islandora_video_streaming_panopto_get_session($token, $uploadendpoint) 
   return $session;
 }
 
-/*
+/* Requests cURL 
  * @param $endpoint
  * @param $headers
  * @param $content
@@ -197,12 +190,13 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
   curl_close($cURL);
   if ($response === false) {
     $messages = array(
-      'message' => t("Unable to receive response from curl_exec() for object @pid"),
-      'message_sub' => array('@pid' => $object->id),
+      'message' => t("Unable to receive response from curl_exec()"),
+      'message_sub' => array(),
       'type' => 'watchdog',
       'severity' => WATCHDOG_ERROR,
     );
     $failureMessage['messages'][] = $messages;
+    return $failureMessage;
   } else {
     $headers = substr($response, 0, $header_size);
     $body = substr($response, $header_size);
@@ -216,30 +210,32 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
           return $json;
         } else {
           $messages = array(
-            'message' => t("For object @pid : JSON key from $endpoint ($expectation) missing . $response"),
-            'message_sub' => array('@pid' => $object->id),
+            'message' => t("JSON key from $endpoint ($expectation) missing . $response"),
+            'message_sub' => array(),
             'type' => 'watchdog',
             'severity' => WATCHDOG_ERROR,
           );
           $failureMessage['messages'][] = $messages;
+          return $failureMessage;
         }
       } else {
         $messages = array(
-          'message' => t("For object @pid : Expected JSON key from $endpoint but could not decode. $response"),
-          'message_sub' => array('@pid' => $object->id),
+          'message' => t("Expected JSON key from $endpoint but could not decode. $response"),
+          'message_sub' => array(),
           'type' => 'watchdog',
           'severity' => WATCHDOG_ERROR,
         );
         $failureMessage['messages'][] = $messages;
+        return $failureMessage;
       }
     } else {
       $messages = array(
-        'message' => t("For object @pid : Expected one of " .implode(',', array_keys($expect))."; got a $response_code"),
-        'message_sub' => array('@pid' => $object->id), 
+        'message' => t("Expected one of " .implode(',', array_keys($expect))."; got a $response_code"),
+        'message_sub' => array(), 
         'type' => 'watchdog',
         'severity' => WATCHDOG_ERROR,
       );
-      $failureMessage['messages'][] = $messages;
+      watchdog($messages);
     }
   }
   return;
@@ -247,8 +243,9 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
 
 /*
  * Uploads file to Panopto using AWS S3 Uploader
- * @param $upload_target - url of upload target
- * @param $file_path - path of object
+ * @param string $upload_target url of upload target
+ * @param string $file_path path of object
+ * @return void
  */
 function islandora_video_streaming_panopto_upload_file($upload_target, $file_path) {
   $element = explode("/", $upload_target);
@@ -281,41 +278,40 @@ function islandora_video_streaming_panopto_upload_file($upload_target, $file_pat
   do {
     try {
       $result = $uploader->upload();
-    } catch (Exception $ex) {
-      $messages = array(
-        'message' => t('S3Client and Uploader error: @exception'),
-        'message_sub' => array('@exception' => $ex->getMessage()),
-        'type' => 'watchdog',
-        'severity' => WATCHDOG_ERROR,
-      );
-      $failureMessage['messages'][] = $messages;
-      watchdog_exception('islandora_video_streaming_panopto', $ex);
+    } catch (MultipartUploadException $e) {
+      rewind($source);
+      $uploader = new MultipartUploader($s3Client, $source, [
+        'state' => $e->getState(),
+      ]);
     }
   } while (!isset($result));
 }
 
 /*
  * Creates manifest file, in temporary storage, needed for Panopto Video Upload
- * @param $file_path
- * @param $manifest_file_name
+ * @param $file_path filepath of the Islandora object
+ * @return string filename or filepath of the newly created manifest file
  */
-function islandora_video_streaming_panopto_create_manifest_for_video($file_path = null, $manifest_file_name=null) {
+function islandora_video_streaming_panopto_create_manifest_for_video($file_path = null) {
   $file_name = basename($file_path);
-
-  $template = file_get_contents('https://raw.githubusercontent.com/Panopto/upload-python-sample/master/simplest/upload_manifest_template.xml');
+  $template = file_get_contents('upload_manifest_template.xml');
   $template = str_replace("{Title}", $file_name, $template);
   $template = str_replace("{Description}", 'This is a video session with the uploaded video file '.$file_name, $template);
   $template = str_replace("{Filename}", $file_name, $template);
   $template = str_replace("{Date}", date('c'), $template);
   
-  $finished = file_put_contents(MANIFEST_FILE_NAME, $template);
+  $part_of_file_name = explode(".", $file_name);
+  $updated_manifest_file = "/tmp/$part_of_file_name[0].xml";
+  file_put_contents($updated_manifest_file, $template);
+  return $updated_manifest_file;
 }
 
 /*
  * Finishes upload
- * @param $baseUrl
+ * @param $baseUrl 
  * @param $session_upload
  * @param $token
+ * @return void 
  */
 function islandora_video_streaming_panopto_finish_upload($baseUrl, $session_upload, $token) {
  $upload_id = $session_upload['ID'];
@@ -331,11 +327,12 @@ function islandora_video_streaming_panopto_finish_upload($baseUrl, $session_uplo
 
 /*
  * Monitors progress made by Uploader
- * @param $baseUrl
- * @param $upload_id
- * @param $token
+ * @param string $baseUrl
+ * @param string $upload_id
+ * @param string $token
+ * @return boolean 
  */
-function monitor_progress($baseUrl, $upload_id, $token) {
+function islandora_video_streaming_monitor_progress($baseUrl, $upload_id, $token) {
   while(1){
       sleep(5);
       $url = $baseUrl."/".$upload_id;
