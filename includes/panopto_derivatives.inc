@@ -21,8 +21,8 @@ use Aws\Exception\MultipartUploadException;
  * @param string $filePath Path of object
  * @return array An array that describes the success or failure of the upload 
  */
-function islandora_video_streaming_panopto_upload($object, $filePath) {
-  if ($filePath || !isset($object['PANOPTO_INFO'])) {
+function islandora_video_streaming_panopto_upload($object, $force) {
+  if ($force || !isset($object['PANOPTO_INFO'])) {
     module_load_include('inc', 'islandora_video', "includes/derivatives" );
     $archival_file = islandora_video_copy_obj_datastream($object);
     if ($archival_file === FALSE) {

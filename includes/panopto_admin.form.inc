@@ -44,7 +44,8 @@ function islandora_video_streaming_panopto_admin(array $form, array &$form_state
   $form['islandora_video_streaming_panopto_folder_id'] = array(
     '#type' => 'textfield',
     '#title' => t('Folder ID'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_folder_id')
+    '#default_value' => variable_get('islandora_video_streaming_panopto_folder_id'),
+    '#required' => TRUE
   );
   return system_settings_form($form);
 }
