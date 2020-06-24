@@ -332,9 +332,8 @@ function islandora_video_streaming_panopto_create_manifest_for_video($file_path 
   $template = str_replace("{Filename}", $file_name, $template);
   $template = str_replace("{Date}", date('c'), $template);
   
-  $temp_name = drupal_tempnam('temporary://', 'file');
   $part_of_file_name = explode(".", $file_name);
-  $updated_manifest_file = drupal_tempnam($temp_name, $part_of_file_name[0]) . '.xml';
+  $updated_manifest_file = drupal_tempnam('temporary://', $part_of_file_name[0]) . '.xml';
   file_put_contents($updated_manifest_file, $template);
   return $updated_manifest_file;
 }
