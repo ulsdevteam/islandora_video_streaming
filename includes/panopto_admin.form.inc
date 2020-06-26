@@ -1,12 +1,20 @@
 <?php
 /*
  * Defines the admin settings form.
- *
+ * 
+ * Client id and client secret can be found or generated through API Clients 
+ * in User Settings (click on the arrow below User name on top right of webpage).
+ * 
+ * Folder ID can be found through the Manage tab in Settings, must be in the specified
+ * folder. 
+ * 
+ * To generate a folder ID, create a new folder. Follow previous steps for
+ * finding the folder ID for the new folder.
+ * 
  * @param array $form
  *   The Drupal form definition.
  * @param array $form_state
  *   The Drupal form state.
- *
  * @return array
  *   The Drupal form definition.
  */
@@ -37,7 +45,7 @@ function islandora_video_streaming_panopto_admin(array $form, array &$form_state
   );
   $form['islandora_video_streaming_panopto_secret_client_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Secret Client ID'),
+    '#title' => t('Client Secret'),
     '#default_value' => variable_get('islandora_video_streaming_panopto_secret_client_id'),
     '#required' => TRUE
   );

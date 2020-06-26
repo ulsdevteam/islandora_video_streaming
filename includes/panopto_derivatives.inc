@@ -75,7 +75,6 @@ function islandora_video_streaming_panopto_upload($object, $force) {
             );
             $failureMessage['messages'][] = $messages;
             watchdog_exception('islandora_video_streaming_panopto', $ex);
-            return $failureMessage;
           }
           $streaming['upload_id'] = $session['ID'];
         } else {
@@ -90,15 +89,8 @@ function islandora_video_streaming_panopto_upload($object, $force) {
           );
           $failureMessage['messages'][] = $messages;
         }
+        drupal_unlink($manifest_file);
       } 
-    } else {
-      $messages = array(
-        'message' => t('Failed to retrieve session for object: @pid'),
-        'message_sub' => array('@pid' => $object->id),
-        'type' => 'watchdog',
-        'severity' => WATCHDOG_ERROR,
-      );
-      $failureMessage['messages'][] = $messages;
     }
     file_delete($archival_file['file'], true);
     if ($streaming) {
@@ -146,6 +138,18 @@ function islandora_video_streaming_panopto_get_token($oauthendpoint) {
   }
   if ($response) {
     $token = $response['access_token'];
+  } else {
+    $messages = array(
+      'message' => t('Failed to retrieve $token. $response is @response . $header is @header . $content is @content'),
+      'message_sub' => array(
+        '@response' => $response,
+        '@header' => $header,
+        '@content' => $content,
+      ),
+      'type' => 'watchdog',
+      'severity' => WATCHDOG_ERROR,
+    );
+    $failureMessage['messages'][] = $messages;
   }
   return $token;
 }
@@ -168,6 +172,18 @@ function islandora_video_streaming_panopto_get_session($token, $uploadendpoint) 
     $response = islandora_video_streaming_panopto_request_curl($uploadendpoint, $headers, $content, 'POST', array(201 => 'ID'));
     if ($response) {
       $session = $response;
+    } else {
+      $messages = array(
+        'message' => t('Failed to retrieve $session. $response is @response . $header is @header . $content is @content'),
+        'message_sub' => array(
+          '@response' => $response,
+          '@header' => $header,
+          '@content' => $content,
+        ),
+        'type' => 'watchdog',
+        'severity' => WATCHDOG_ERROR,
+      );
+      $failureMessage['messages'][] = $messages;
     }
   }
   return $session;
@@ -211,8 +227,8 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
   curl_close($cURL);
   if ($response === false) {
     $messages = array(
-      'message' => t("Unable to receive response from curl_exec()"),
-      'message_sub' => array(),
+      'message' => t("Unable to receive response from curl_exec(): @error "),
+      'message_sub' => array('@error' => curl_error($cURL)),
       'type' => 'watchdog',
       'severity' => WATCHDOG_ERROR,
     );
@@ -239,8 +255,6 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
             'type' => 'watchdog',
             'severity' => WATCHDOG_ERROR,
           );
-          $failureMessage['messages'][] = $messages;
-          watchdog($messages);
         }
       } else {
         $messages = array(
@@ -252,8 +266,6 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
           'type' => 'watchdog',
           'severity' => WATCHDOG_ERROR,
         );
-        $failureMessage['messages'][] = $messages;
-        watchdog($messages);
       }
     } else {
       $messages = array(
@@ -265,10 +277,9 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
         'type' => 'watchdog',
         'severity' => WATCHDOG_ERROR,
       );
-      $failureMessage['messages'][] = $messages;
-      watchdog($messages);
     }
   }
+  watchdog($messages);
   return;
 }
 
@@ -276,6 +287,7 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
  * Uploads file to Panopto using AWS S3 Uploader
  * @param string $upload_target The URL of upload target
  * @param string $file_path The URL which is the target of the request
+ * @throws Exception The S3Client may throw an exception which is unhandled by this method.
  * @return void
  */
 function islandora_video_streaming_panopto_upload_file($upload_target, $file_path) {
@@ -323,9 +335,9 @@ function islandora_video_streaming_panopto_upload_file($upload_target, $file_pat
  * @param string $file_path The filepath of the Islandora object
  * @return string The filename or filepath of the newly created manifest file
  */
-function islandora_video_streaming_panopto_create_manifest_for_video($file_path = null) {
+function islandora_video_streaming_panopto_create_manifest_for_video($file_path) {
   $file_name = basename($file_path);
-  $manifest_template = drupal_get_path('module','islandora_video_streaming') .'/includes/' . 'upload_manifest_template.xml';
+  $manifest_template = drupal_get_path('module','islandora_video_streaming') . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'upload_manifest_template.xml';
   $template = file_get_contents($manifest_template);
   $template = str_replace("{Title}", $file_name, $template);
   $template = str_replace("{Description}", 'This is a video session with the uploaded video file '.$file_name, $template);
@@ -335,6 +347,10 @@ function islandora_video_streaming_panopto_create_manifest_for_video($file_path 
   $part_of_file_name = explode(".", $file_name);
   $updated_manifest_file = drupal_tempnam('temporary://', $part_of_file_name[0]) . '.xml';
   file_put_contents($updated_manifest_file, $template);
+  //file without .xml is created and will be deleted 
+  $filename_without_type = explode(".", $updated_manifest_file);
+  drupal_unlink($filename_without_type[0]);
+      
   return $updated_manifest_file;
 }
 
