@@ -345,12 +345,10 @@ function islandora_video_streaming_panopto_create_manifest_for_video($file_path)
   $template = str_replace("{Date}", date('c'), $template);
   
   $part_of_file_name = explode(".", $file_name);
-  $updated_manifest_file = drupal_tempnam('temporary://', $part_of_file_name[0]) . '.xml';
+  $updated_manifest_file = tempnam('temporary://', $part_of_file_name[0]);
+  rename($updated_manifest_file, $updated_manifest_file .= '.xml');
   file_put_contents($updated_manifest_file, $template);
-  //file without .xml is created and will be deleted 
-  $filename_without_type = explode(".", $updated_manifest_file);
-  drupal_unlink($filename_without_type[0]);
-      
+
   return $updated_manifest_file;
 }
 
