@@ -4,7 +4,7 @@
  * Implement Panopto video upload  
  * @param AbstractObject $object An Islandora Object
  * @param String $filePath video file path
- */
+*/
 
 
 libraries_load('aws'); 
@@ -65,7 +65,7 @@ function islandora_video_streaming_panopto_upload($object, $force) {
         $response = islandora_video_streaming_panopto_finish_upload($uploadendpoint, $session, $token);
         if (isset($response)) {
           try {
-            $success = islandora_video_streaming_monitor_progress($uploadendpoint, $upload_id, $token);
+            $response = islandora_video_streaming_monitor_progress($uploadendpoint, $upload_id, $token);
           } catch (Exception $ex) {
             $messages = array(
             'message' => t('Panopto progress error: @exception'),
@@ -76,13 +76,12 @@ function islandora_video_streaming_panopto_upload($object, $force) {
             $failureMessage['messages'][] = $messages;
             watchdog_exception('islandora_video_streaming_panopto', $ex);
           }
-          $streaming['upload_id'] = $session['ID'];
+          $streaming['upload_id'] = $response['SessionId'];
         } else {
           $messages = array(
-            'message' => t('Issue with finishing upload for object: @pid, response: @response'),
+            'message' => t('Issue with finishing upload for object: @pid'),
             'message_sub' => array(
               '@pid' => $object->id,
-              '@response' => $response,
             ),
             'type' => 'watchdog',
             'severity' => WATCHDOG_ERROR,
@@ -395,8 +394,8 @@ function islandora_video_streaming_monitor_progress($baseUrl, $upload_id, $token
     case 1:
     case 3:
     case 4:
-      return true;
+      return $response;
     default:
-      return false;
+      return;
   }
 }

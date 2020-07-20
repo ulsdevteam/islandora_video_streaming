@@ -60,14 +60,17 @@ function islandora_video_streaming_panopto_islandora_sp_videoCModel_islandora_de
 function islandora_video_streaming_panopto_process_islandora_video($variables = array()) {
   $object = $variables['object'];
   $streamDatastream = 'PANOPTO_INFO';
+  dpm("here");
   // If a streaming datastream is available, and if configured to stream
   if ($object[$streamDatastream] && variable_get('islandora_video_streaming_viewers')) {
     // get the viewer params of PID and URL
-    $params = array('url' => $object[$streamDatastream]->url);
+    //$params = array('url' => $object[$streamDatastream]->url);
     // get a streaming viewer instance
-    $new_content = ''; // TODO: theme a Panopto viewer
+    dpm("Inside the first if statement");
+    $new_content = '<iframe src="https://pitt.hosted.panopto.com/Panopto/Pages/Embed.aspx?id=99e8503e-2e84-44ab-ac95-abfa014e4d06&autoplay=false&offerviewer=true&showtitle=false&showbrand=false&start=0&interactivity=search" style="width: 720px; height: 405px; border: 1px solid #464646;" allowfullscreen allow="autoplay"></iframe>'; // TODO: theme a Panopto viewer
     // if the viewer was created successfully, overwrite the non-streaming viewer
     if (isset($new_content) && $new_content) {
+      dpm($new_content);
       $variables['islandora_content'] = $new_content;
     }
   }
