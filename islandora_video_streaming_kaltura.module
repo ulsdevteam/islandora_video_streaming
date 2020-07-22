@@ -59,7 +59,7 @@ function islandora_video_streaming_kaltura_islandora_sp_videoCModel_islandora_de
  *
  * @var $variables array The page content variables
  */
-function islandora_video_streaming_kaltura_process_islandora_video($variables = array()) {
+function islandora_video_streaming_kaltura_process_islandora_video(&$variables = array()) {
   $object = $variables['object'];
   $streamDatastream = 'KALTURA_STREAM';
   // If a streaming datastream is available, and if configured to stream
