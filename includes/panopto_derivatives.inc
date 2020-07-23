@@ -379,7 +379,7 @@ function islandora_video_streaming_panopto_finish_upload($baseUrl, $session_uplo
  */
 function islandora_video_streaming_monitor_progress($baseUrl, $upload_id, $token) {
   while(1){
-      sleep(5);
+      sleep(15);
       $url = $baseUrl."/".$upload_id;
       $headers = array("Authorization: Bearer {$token}", "Content-Type: application/json");
       $resp = islandora_video_streaming_panopto_request_curl($url, $headers);
@@ -391,6 +391,7 @@ function islandora_video_streaming_monitor_progress($baseUrl, $upload_id, $token
     break;
   }
   switch ($response['State']) {
+    case 0:
     case 1:
     case 3:
     case 4:

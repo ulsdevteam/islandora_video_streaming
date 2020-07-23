@@ -16,4 +16,13 @@
  *
  */
 ?>
-<iframe src="<?php print $url?>" style="width: 720px; height: 405px; border: 1px solid #464646;" allowfullscreen allow="autoplay"></iframe>
+<iframe src="https://pitt.hosted.panopto.com/Panopto/Pages/Embed.aspx?id=<?php print $url?>
+&autoplay=<?php print $autoplay?>
+&offerviewer=<?php print $offer_viewer?>
+&showtitle=<?php print $showtitle?>
+&showbrand=<?php print $showbrand?>
+&start=<?php print $start_at?>
+&interactivity=<?php print $interactivity?>"
+style="width: <?php print $width?>; height: <?php print $height?>; 
+border: 1px solid #464646;
+" allowfullscreen allow="autoplay"></iframe>

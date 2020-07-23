@@ -62,11 +62,20 @@ function islandora_video_streaming_panopto_process_islandora_video(&$variables =
   $streamDatastream = 'PANOPTO_INFO';
   // If a streaming datastream is available, and if configured to stream
   if ($object[$streamDatastream] && variable_get('islandora_video_streaming_viewers')) {
+    $panopto_object = json_decode($object[$streamDatastream]->content);
     $var = array(
-        'url' => 'https://pitt.hosted.panopto.com/Panopto/Pages/Embed.aspx?id=99e8503e-2e84-44ab-ac95-abfa014e4d06&autoplay=false&offerviewer=true&showtitle=false&showbrand=false&start=0&interactivity=search',
+        'url' => $panopto_object->upload_id,
+        'height' => variable_get('islandora_video_streaming_panopto_video_height'),
+        'width' => variable_get('islandora_video_streaming_panopto_video_width'),
+        'aspect_ratio' => variable_get('islandora_video_streaming_panopto_video_aspect_ratio'),
+        'start_at' => variable_get('islandora_video_streaming_panopto_video_start_at'),
+        'interactivity' => variable_get('islandora_video_streaming_panopto_video_video_interactivity'),
+        'autoplay' => variable_get('islandora_video_streaming_panopto_video_video_autoplay'),
+        'showbrand' => variable_get('islandora_video_streaming_panopto_video_video_showbrand'),
+        'showtitle' => variable_get('islandora_video_streaming_panopto_video_video_showtitle'),
+        'offer_viewer' => variable_get('islandora_video_streaming_panopto_video_video_offer_viewer'),      
     );
     $new_content = theme('panopto_streaming_iframe', $var);
-    //$new_content = '<iframe src="https://pitt.hosted.panopto.com/Panopto/Pages/Embed.aspx?id=99e8503e-2e84-44ab-ac95-abfa014e4d06&autoplay=false&offerviewer=true&showtitle=false&showbrand=false&start=0&interactivity=search" style="width: 720px; height: 405px; border: 1px solid #464646;" allowfullscreen allow="autoplay"></iframe>'; // TODO: theme a Panopto viewer
     // if the viewer was created successfully, overwrite the non-streaming viewer
     if (isset($new_content) && $new_content) {
       $variables['islandora_content'] = $new_content;
@@ -95,6 +104,15 @@ function islandora_video_streaming_panopto_theme() {
     'panopto_streaming_iframe' => array(
       'variables' => array(
         'url' => null,
+        'height' => null,
+        'width' => null,
+        'aspect_ratio' => null,
+        'start_at' => null,
+        'interactivity' => null,
+        'autoplay' => null,
+        'showbrand' => null,
+        'showtitle' => null,
+        'offer_viewer' => null,
       ),
       'template' => 'iframe',
       'path' => drupal_get_path('module','islandora_video_streaming') . DIRECTORY_SEPARATOR. 'theme',
