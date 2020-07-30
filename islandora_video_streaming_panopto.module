@@ -119,3 +119,170 @@ function islandora_video_streaming_panopto_theme() {
     )
   );
 } 
+
+function islandora_video_streaming_panopto_islandora_object_alter(AbstractObject $object, &$context) {
+  islandora_video_streaming_panopto_delete_from_panopto($object, $context);
+} 
+
+function islandora_video_streaming_panopto_islandora_datastream_alter(AbstractObject $object, AbstractDatastream $datastream, &$context) {
+  if ($datastream->id == 'PANOPTO_INFO') {
+    islandora_video_streaming_panopto_delete_from_panopto($object, $context);
+  }
+}
+
+function islandora_video_streaming_panopto_delete_from_panopto(AbstractObject $object, &$context) {
+  if (isset($object['PANOPTO_INFO']) && ($context['action'] == 'purge' || $context['action'] == 'delete' )) {
+   //Panopto/api/v1/sessions/{id} for deleting videos on Panopto
+    $decoded = json_decode($object['PANOPTO_INFO']->content);
+    if (isset($decoded)) {
+      $id = $decoded->upload_id;
+      if (isset($id)) {
+        $oauthendpoint = variable_get('islandora_video_streaming_panopto_host');
+        $uploadendpoint = $oauthendpoint . '/Panopto/api/v1/sessions/'. $id;
+        $oauthendpoint .= "/Panopto/oauth2/connect/token";
+        $token = islandora_video_streaming_panopto_get_token($oauthendpoint);
+        if (isset($token)) {
+          $headers = array("Authorization: Bearer {$token}", "Content-Type: application/json");
+          $response = islandora_video_streaming_panopto_request_curl($uploadendpoint, $headers, '', 'DELETE');
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Requests token and returns token
+ * @param string $oauthendpoint The authentication URL for request
+ * @return string|null A token retrieved from server, or null on failure
+ */
+function islandora_video_streaming_panopto_get_token($oauthendpoint) {
+  $client_id = variable_get('islandora_video_streaming_panopto_client_id');
+  $secret_client_id = variable_get('islandora_video_streaming_panopto_secret_client_id');
+  $username = variable_get('islandora_video_streaming_panopto_username');
+  $password = variable_get('islandora_video_streaming_panopto_password');
+  
+  $response = null;
+  $token = null;
+  
+  if (isset($oauthendpoint) && isset($client_id) && isset($secret_client_id) && isset($username) && isset($password)) {
+    $authorization = base64_encode("$client_id:$secret_client_id");
+    $headers = array("Authorization: Basic {$authorization}", "Content-Type: application/x-www-form-urlencoded");
+    $content = 'grant_type=password&username='.urlencode(strtolower($username)).'&password='.urlencode($password).'&scope=api';
+    $response = islandora_video_streaming_panopto_request_curl($oauthendpoint, $headers, $content, 'POST', array(200 => 'access_token'));
+  }
+  if ($response) {
+    $token = $response['access_token'];
+  } else {
+    $messages = array(
+      'message' => t('Failed to retrieve $token. $response is @response . $header is @header . $content is @content'),
+      'message_sub' => array(
+        '@response' => $response,
+        '@header' => $header,
+        '@content' => $content,
+      ),
+      'type' => 'watchdog',
+      'severity' => WATCHDOG_ERROR,
+    );
+    $failureMessage['messages'][] = $messages;
+  }
+  return $token;
+}
+
+/**
+ * Function to send a CURL request
+ * @param string $endpoint The URL which is the target of the request
+ * @param array $headers A list of HTTP headers to send
+ * @param string $content The optional body of the request, if applicable
+ * @param string $type The HTTP method to use (defaults to GET)
+ * @param array $expect An optional keyed array of HTTP response codes mapped to an (optional) expected JSON identifier
+ *                      If provided, this is required for the function to return data
+ * @return mixed A string or array.
+ *               If no $expect parameter is given, returns the response body.
+ *               If an $expect key matches with no array value, returns the response body only on a match
+ *               If an $expect key matches and has a value, returns the decoded JSON as an array if that matched value is present as a key
+ */
+function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $content = '', $type = 'GET', $expect = array()) {
+  $cURL = curl_init();
+  curl_setopt($cURL, CURLOPT_URL, $endpoint);
+  curl_setopt($cURL, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($cURL, CURLOPT_HEADER, 1);
+  curl_setopt($cURL, CURLINFO_HEADER_OUT, true);
+  switch (strtoupper($type)) {
+    case 'POST':
+      curl_setopt($cURL, CURLOPT_POST, true);
+    break;
+    case 'PUT':
+      curl_setopt($cURL, CURLOPT_CUSTOMREQUEST, 'PUT');
+    break;
+    case 'DELETE':
+      curl_setopt($cURL, CURLOPT_CUSTOMREQUEST, 'DELETE');
+    break;
+  }
+  if ($content) {
+    curl_setopt($cURL, CURLOPT_POSTFIELDS, $content);
+  }
+  curl_setopt($cURL, CURLOPT_HTTPHEADER, $headers);
+  $response = curl_exec($cURL);
+  $header_size = curl_getinfo($cURL, CURLINFO_HEADER_SIZE);
+  $response_code = curl_getinfo($cURL, CURLINFO_RESPONSE_CODE);
+  $headerSent = curl_getinfo($cURL, CURLINFO_HEADER_OUT );
+  curl_close($cURL);
+  if ($response === false) {
+    $messages = array(
+      'message' => t("Unable to receive response from curl_exec(): @error "),
+      'message_sub' => array('@error' => curl_error($cURL)),
+      'type' => 'watchdog',
+      'severity' => WATCHDOG_ERROR,
+    );
+    watchdog($messages);
+  } else {
+    $headers = substr($response, 0, $header_size);
+    $body = substr($response, $header_size);
+    if (empty($expect) || (isset($expect[$response_code]) && empty($expect[$response_code]))) {
+      return $body;
+    } else if (isset($expect[$response_code])) {
+      $expectation = $expect[$response_code];
+      $json = json_decode($body, true);
+      if (is_array($json)) {
+        if (isset($json[$expectation])) {
+          return $json;
+        } else {
+          $messages = array(
+            'message' => t("JSON key from @endpoint (@expectation) missing . @response"),
+            'message_sub' => array(
+              '@endpoint' => $endpoint, 
+              '@expectation' => $expectation,
+              '@response' => $response,
+            ),
+            'type' => 'watchdog',
+            'severity' => WATCHDOG_ERROR,
+          );
+        }
+      } else {
+        $messages = array(
+          'message' => t("Expected JSON key from @endpoint but could not decode. @response"),
+          'message_sub' => array(
+            '@endpoint' => $endpoint,
+            '@response' => $response,
+          ),
+          'type' => 'watchdog',
+          'severity' => WATCHDOG_ERROR,
+        );
+      }
+    } else {
+      $messages = array(
+        'message' => t("Expected one of @expected; got a @response_code"),
+        'message_sub' => array(
+          '@expected' => implode(',', array_keys($expect)),
+          '@response_code' => $response_code,
+        ), 
+        'type' => 'watchdog',
+        'severity' => WATCHDOG_ERROR,
+      );
+    }
+  }
+  dpm($response);
+  watchdog($messages['type'], $messages['message'], $messages['message_sub'], $messages['severity']);
+  return;
+}
+
