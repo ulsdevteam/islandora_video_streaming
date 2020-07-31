@@ -8,7 +8,7 @@ This file describes installation instructions for the AWS library needed within 
 
 2. Extract zip into /sites/all/libraries 
 
-#Panopto API Credential Setup
+# Panopto API Credential Setup
 
 For locahost, enter Islandora tab and then 'Islandora Viewers'. In this section, enter 'Panopto Video Streaming' to enter credentials.
 
