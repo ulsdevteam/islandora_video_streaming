@@ -10,7 +10,7 @@ This file describes installation instructions for the AWS library needed within 
 
 # Panopto API Credential Setup
 
-For locahost, enter Islandora tab and then 'Islandora Viewers'. In this section, enter 'Panopto Video Streaming' to enter credentials.
+For localhost, enter Islandora tab and then 'Islandora Viewers'. In this section, enter 'Panopto Video Streaming' to enter credentials.
 
 API Client ID : Click on most-upper right text to go into 'User Settings' and then 'API clients'.
 
