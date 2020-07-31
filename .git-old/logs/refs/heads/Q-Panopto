@@ -1,0 +1,5 @@
+0000000000000000000000000000000000000000 47b2cd06162bf5fcb1225903fa4b0fb031bd3810 vagrant <vagrant@islandora> 1594924564 +0000	branch: Created from refs/remotes/origin/Q-Panopto
+47b2cd06162bf5fcb1225903fa4b0fb031bd3810 1424dbb491838d2c4e953634990e647a54d9e131 Mortick <vagrant@islandora> 1595260147 +0000	commit: streaming
+1424dbb491838d2c4e953634990e647a54d9e131 4a70edb166110411b9f8f664e4f0200a1a527172 Mortick <root@islandora> 1595439252 +0000	commit: .tpl Template file addition and related theme functions are added to display videos from Panopto
+4a70edb166110411b9f8f664e4f0200a1a527172 c969d1b9ddb846594e18dca7b6511cd8b40c1066 Mortick <vagrant@islandora> 1595523629 +0000	commit: SessionID issues have been fixed by increasing sleep(..) time. New iframe theme added for streaming
+c969d1b9ddb846594e18dca7b6511cd8b40c1066 6597243c2373c62d86be6803df65c3c95379d73c Mortick <root@islandora> 1596124074 +0000	commit: Deletion from Panopto server now works and upload issue has been fixed

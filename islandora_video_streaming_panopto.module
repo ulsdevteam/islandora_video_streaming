@@ -83,6 +83,10 @@ function islandora_video_streaming_panopto_process_islandora_video(&$variables =
   }
 }
 
+/*
+ * Implements hook_libraries_info().
+ * @return array Library needed for upload
+ */
 function islandora_video_streaming_panopto_libraries_info() {
   $libraries['aws'] = array(
     'name' => 'aws library', 
@@ -99,6 +103,10 @@ function islandora_video_streaming_panopto_libraries_info() {
   return $libraries;
 }
 
+/*
+ * Implements hook_theme()
+ * @return array Everything necessary for iframe.tlp.theme
+ */
 function islandora_video_streaming_panopto_theme() {
   return array(
     'panopto_streaming_iframe' => array(
@@ -120,16 +128,32 @@ function islandora_video_streaming_panopto_theme() {
   );
 } 
 
+/*
+ * Implements hook_islandora_object_alter().
+ * @param AbstractObject $object The object being altered
+ * @param array $context The context or action of which the object will be altered
+ */
 function islandora_video_streaming_panopto_islandora_object_alter(AbstractObject $object, &$context) {
   islandora_video_streaming_panopto_delete_from_panopto($object, $context);
 } 
 
+/*
+ * Implements hook_islandora_datastream_alter().
+ * @param AbstractObject $object The object being altered
+ * @param AbstractDatastream $datastream The datastream being altered
+ * @param array $context The context or action of which the object will be altered
+ */
 function islandora_video_streaming_panopto_islandora_datastream_alter(AbstractObject $object, AbstractDatastream $datastream, &$context) {
   if ($datastream->id == 'PANOPTO_INFO') {
     islandora_video_streaming_panopto_delete_from_panopto($object, $context);
   }
 }
 
+/*
+ * Deletes video from Panopto server.
+ * @param AbstractObject $object The object being altered
+ * @param array $context The context or action of which the object will be altered
+ */
 function islandora_video_streaming_panopto_delete_from_panopto(AbstractObject $object, &$context) {
   if (isset($object['PANOPTO_INFO']) && ($context['action'] == 'purge' || $context['action'] == 'delete' )) {
    //Panopto/api/v1/sessions/{id} for deleting videos on Panopto
