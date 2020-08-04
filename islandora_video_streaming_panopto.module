@@ -7,7 +7,7 @@ function islandora_video_streaming_panopto_menu() {
   return array(
     'admin/islandora/islandora_viewers/video_streaming_panopto' => array(
       'title' => 'Panopto Video Streaming',
-      'description' => 'Configure the Kaltura Video Streaming Viewer',
+      'description' => 'Configure the Panopto Video Streaming Viewer',
       'page callback' => 'drupal_get_form',
       'access arguments' => array('administer site configuration'),
       'page arguments' => array('islandora_video_streaming_panopto_admin'),
@@ -105,7 +105,7 @@ function islandora_video_streaming_panopto_libraries_info() {
 
 /*
  * Implements hook_theme()
- * @return array Everything necessary for iframe.tlp.theme
+ * @return array Everything necessary for iframe.tpl.theme
  */
 function islandora_video_streaming_panopto_theme() {
   return array(
@@ -161,9 +161,9 @@ function islandora_video_streaming_panopto_delete_from_panopto(AbstractObject $o
     if (isset($decoded)) {
       $id = $decoded->upload_id;
       if (isset($id)) {
-        $oauthendpoint = variable_get('islandora_video_streaming_panopto_host');
-        $uploadendpoint = $oauthendpoint . '/Panopto/api/v1/sessions/'. $id;
-        $oauthendpoint .= "/Panopto/oauth2/connect/token";
+        $host = variable_get('islandora_video_streaming_panopto_host');
+        $oauthendpoint = $host . '/Panopto/oauth2/connect/token/';
+        $uploadendpoint = $host . '/Panopto/api/v1/sessions/'. $id;
         $token = islandora_video_streaming_panopto_get_token($oauthendpoint);
         if (isset($token)) {
           $headers = array("Authorization: Bearer {$token}", "Content-Type: application/json");
@@ -198,13 +198,12 @@ function islandora_video_streaming_panopto_get_token($oauthendpoint) {
     $token = $response['access_token'];
   } else {
     $messages = array(
-      'message' => t('Failed to retrieve $token. $response is @response . $header is @header . $content is @content'),
+      'message' => t('Failed to retrieve $token. $response is @response . $content is @content'),
       'message_sub' => array(
         '@response' => $response,
-        '@header' => $header,
         '@content' => $content,
       ),
-      'type' => 'watchdog',
+      'type' => 'islandora_video_streaming_panopto',
       'severity' => WATCHDOG_ERROR,
     );
     $failureMessage['messages'][] = $messages;
@@ -255,10 +254,9 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
     $messages = array(
       'message' => t("Unable to receive response from curl_exec(): @error "),
       'message_sub' => array('@error' => curl_error($cURL)),
-      'type' => 'watchdog',
+      'type' => 'islandora_video_streaming_panopto',
       'severity' => WATCHDOG_ERROR,
     );
-    watchdog($messages);
   } else {
     $headers = substr($response, 0, $header_size);
     $body = substr($response, $header_size);
@@ -278,7 +276,7 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
               '@expectation' => $expectation,
               '@response' => $response,
             ),
-            'type' => 'watchdog',
+            'type' => 'islandora_video_streaming_panopto',
             'severity' => WATCHDOG_ERROR,
           );
         }
@@ -289,7 +287,7 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
             '@endpoint' => $endpoint,
             '@response' => $response,
           ),
-          'type' => 'watchdog',
+          'type' => 'islandora_video_streaming_panopto',
           'severity' => WATCHDOG_ERROR,
         );
       }
@@ -300,12 +298,11 @@ function islandora_video_streaming_panopto_request_curl($endpoint, $headers, $co
           '@expected' => implode(',', array_keys($expect)),
           '@response_code' => $response_code,
         ), 
-        'type' => 'watchdog',
+        'type' => 'islandora_video_streaming_panopto',
         'severity' => WATCHDOG_ERROR,
       );
     }
   }
-  dpm($response);
   watchdog($messages['type'], $messages['message'], $messages['message_sub'], $messages['severity']);
   return;
 }

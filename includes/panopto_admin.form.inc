@@ -24,13 +24,13 @@ function islandora_video_streaming_panopto_admin(array $form, array &$form_state
     '#type' => 'textfield',
     '#title' => t('Username'),
     '#default_value' => variable_get('islandora_video_streaming_panopto_username'),
-  
+    '#required' => TRUE
   );
   $form['islandora_video_streaming_panopto_host_information']['islandora_video_streaming_panopto_password'] = array(
     '#type' => 'textfield',
     '#title' => t('Password'),
     '#default_value' => variable_get('islandora_video_streaming_panopto_password'),
-   
+    '#required' => TRUE
   );
   $form['islandora_video_streaming_panopto_client_fieldset'] = array(
     '#type' => 'fieldset',
@@ -62,6 +62,7 @@ function islandora_video_streaming_panopto_admin(array $form, array &$form_state
     '#default_value' => variable_get('islandora_video_streaming_panopto_folder_id'),
     '#required' => TRUE,
   );
+  /* Information about video options: https://support.panopto.com/s/article/Embed-a-Video */
   $form['islandora_video_streaming_panopto_video_information'] = array(
     '#type' => 'fieldset',
     '#title' => t('Video Information'),
