@@ -22,6 +22,7 @@ For API Client ID :
         Client URL: This is an optional field where you can enter the website URL for the client.
         Client Type: Select User Based Server Application.
 
+
 For Folder ID : 
     To create a new folder:
         1. Click on 'My Folder" and then 'Add Folder'.
@@ -29,3 +30,4 @@ For Folder ID :
     
     To use existing folder: 
         1. Go to preferred folder and click 'Folder Settings' icon on the right. Then go to 'Manage'.
+
