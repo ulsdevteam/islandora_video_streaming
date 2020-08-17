@@ -75,7 +75,7 @@ function islandora_video_streaming_kaltura_process_islandora_video(&$variables =
     $new_content = field_kaltura_build_embed($params['entity_id'], KALTURA_MEDIA_TYPE_VIDEO, $field['settings'],  null, null, null, null);
     // if the viewer was created successfully, overwrite the non-streaming viewer
     if (isset($new_content['html']) && $new_content['html']) {
-      $variables['islandora_content'] = $new_content['html'];
+      $variables['islandora_content'] = render($new_content['html']);
     }
   }
 }
