@@ -198,10 +198,9 @@ function islandora_video_streaming_panopto_get_token($oauthendpoint) {
     $token = $response['access_token'];
   } else {
     $messages = array(
-      'message' => t('Failed to retrieve $token. $response is @response . $content is @content'),
+      'message' => t('Failed to retrieve $token. $response is @response.'),
       'message_sub' => array(
         '@response' => $response,
-        '@content' => $content,
       ),
       'type' => 'islandora_video_streaming_panopto',
       'severity' => WATCHDOG_ERROR,

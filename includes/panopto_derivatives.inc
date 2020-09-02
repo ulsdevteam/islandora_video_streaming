@@ -18,7 +18,7 @@ use Aws\Exception\MultipartUploadException;
 /**
  * Implement Panopto video upload  
  * @param AbstractObject $object An Islandora Object
- * @param string $force 
+ * @param boolean $force 
  * @return array An array that describes the success or failure of the upload 
  */
 function islandora_video_streaming_panopto_upload($object, $force) {
@@ -247,7 +247,7 @@ function islandora_video_streaming_panopto_finish_upload($baseUrl, $session_uplo
  * @param string $baseUrl The base URL for request
  * @param string $upload_id The upload id of object
  * @param string $token A token retrieved from server
- * @return array | boolean The result of upload, successful or not
+ * @return array|boolean The result of upload, successful or not
  */
 function islandora_video_streaming_monitor_progress($baseUrl, $upload_id, $token) {
   $Uploading = 0;
