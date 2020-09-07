@@ -4,3 +4,5 @@ core = 7.x
 version = 7.x-1.12
 package = Islandora Viewers
 dependencies[] = islandora_video_streaming
+dependencies[] = libraries
+
