@@ -90,8 +90,8 @@ function islandora_video_streaming_panopto_process_islandora_video(&$variables =
 function islandora_video_streaming_panopto_libraries_info() {
   $libraries['php-panopto-upload-api'] = array(
     'name' => 'panopto upload api library',
-    'vendor url' => 'http://www.example.com',
-    'download url' => 'http://www.example.com',
+    'vendor url' => 'https://github.com/ulsdevteam/php-panopto-upload-api',
+    'download url' => 'https://github.com/ulsdevteam/php-panopto-upload-api/releases',
     'path' => 'lib',
     'version arguments' => array(
       'file' => 'lib/Client.php',
