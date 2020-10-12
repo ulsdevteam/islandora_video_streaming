@@ -1,17 +1,14 @@
-# AWS SDK Installation for Panopto Module
+# Installation and Setup for Panopto Module
 
 ## Description
-This file describes installation instructions for the AWS library needed within the Panopto implementation files.
+This file describes installation instructions for the dependencies needed within the Panopto implementation.
 
 ## Instructions
-1. Download the AWS SDK from https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.zip
+1. Download the PHP Panopto Upload API client from: https://github.com/ulsdevteam/php-panopto-upload-api/releases
 
-2. Extract zip into /sites/all/libraries 
+2. Extract the archive into /sites/all/libraries 
 
 # Panopto API Credential Setup
-
-## Actions Taken in Islandora: 
-For localhost, enter Islandora tab and then 'Islandora Viewers'. In this section, enter 'Panopto Video Streaming' to enter credentials.
 
 ## Actions Taken in Panopto
 
@@ -40,4 +37,7 @@ For Folder ID :
     To use existing folder: 
        
        1. Go to preferred folder and click 'Folder Settings' icon on the right. Then go to 'Manage'.
+
+## Actions Taken in Islandora: 
+After enabling the module, select the Islandora menu and then 'Islandora Viewers'. In this section, enter 'Panopto Video Streaming' to enter credentials and server information.
 
