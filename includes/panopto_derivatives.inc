@@ -22,7 +22,7 @@ function islandora_video_streaming_panopto_upload($object, $force) {
     );
     $streaming = array();
    
-    $manifest_file = islandora_video_streaming_panopto_create_manifest_for_video($file_path);
+    $manifest_file = islandora_video_streaming_panopto_create_manifest_for_video($file_path, $object);
 
     $folder_id = variable_get('islandora_video_streaming_panopto_folder_id');
     $host = variable_get('islandora_video_streaming_panopto_host');
@@ -36,6 +36,7 @@ function islandora_video_streaming_panopto_upload($object, $force) {
       $session = $client->newSession($folder_id);
       $session->uploadFile($manifest_file);
       $session->uploadFile($file_path);
+      $session->uploadFile($object['TRANSCRIPT']);
       $client->finishSession($session);
       // have to call the get status endpoint to populate the SessionId
       while(true) {
@@ -91,7 +92,7 @@ function islandora_video_streaming_panopto_upload($object, $force) {
  * @param string $file_path The filepath of the Islandora object
  * @return string The filename or filepath of the newly created manifest file
  */
-function islandora_video_streaming_panopto_create_manifest_for_video($file_path) {
+function islandora_video_streaming_panopto_create_manifest_for_video($file_path, $object) {
   $file_name = basename($file_path);
   $manifest_template = drupal_get_path('module','islandora_video_streaming') . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'upload_manifest_template.xml';
   $template = file_get_contents($manifest_template);
@@ -99,7 +100,6 @@ function islandora_video_streaming_panopto_create_manifest_for_video($file_path)
   $template = str_replace("{Description}", 'This is a video session with the uploaded video file '.$file_name, $template);
   $template = str_replace("{Filename}", $file_name, $template);
   $template = str_replace("{Date}", date('c'), $template);
-  
   $part_of_file_name = explode(".", $file_name);
   $updated_manifest_file = tempnam('temporary://', $part_of_file_name[0]);
   rename($updated_manifest_file, $updated_manifest_file .= '.xml');

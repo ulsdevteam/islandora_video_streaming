@@ -87,6 +87,42 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         );
         $failureMessage['messages'][] = $messages;
       }
+      //get upload token
+      $uploadToken = new KalturaUploadToken();
+      try {
+       $token = $client->uploadToken->add($uploadToken);
+       dpm($token);
+      } catch (Exception $e) {
+        echo $e->getMessage();
+      }
+      $uploadTokenId = $token->id;
+      $fileData = drupal_realpath('/tmp/subtitles.vtt');
+      $finalChunk = true;
+      $resume = false;
+      $resumeAt = -1;
+
+      try {
+        $result = $client->uploadToken->upload($uploadTokenId, $fileData, $resume, $finalChunk, $resumeAt);
+        dpm($result);
+      } catch (Exception $e) {
+        echo $e->getMessage();
+      }
+      $captionPlugin = KalturaCaptionClientPlugin::get($client);
+      $captionAsset = new KalturaCaptionAsset();
+      $captionAsset->language = "English";
+      $captionAsset->format = KalturaCaptionType::WEBVTT;
+      try {
+      $result = $captionPlugin->captionAsset->add($entry->id, $captionAsset);
+        dpm($result);
+      } catch (Exception $e) {
+        $messages = array(
+          'message' => t($e),
+          'message_sub' => array('@pid' => $object->id),
+          'type' => 'watchdog',
+          'severity' => WATCHDOG_ERROR,
+        );
+        $failureMessage['messages'][] = $messages;
+      }
       
       $streaming['entry_id'] = $entry->id;
     } catch (Exception $e) {

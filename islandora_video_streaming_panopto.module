@@ -36,7 +36,7 @@ function islandora_video_streaming_panopto_islandora_viewer_info() {
  * 
 **/
 function islandora_video_streaming_panopto_islandora_sp_videoCModel_islandora_derivative() {
-  $deriviatives = array();
+  $derivatives = array();
   if (variable_get('islandora_video_streaming_panopto_make_derivative', false)) {
     $derivatives[] = array(
       'source_dsid' => 'OBJ',
@@ -174,3 +174,4 @@ function islandora_video_streaming_panopto_delete_from_panopto(AbstractObject $o
     }
   }
 }
+
