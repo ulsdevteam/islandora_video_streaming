@@ -112,6 +112,7 @@ function islandora_video_streaming_form_islandora_video_upload_form_alter(array 
   );
   $form =  array_slice($form, 0, $index_of_file + 1, true) + $transcript_array + array_slice($form, $index_of_file + 1, count($form) - 1, true);
   
+  //Enable upload of transcript files and have submission first in array
   $form['next']['#submit'][] = 'islandora_video_streaming_islandora_video_upload_form_submit';
   $form['hidden_next']['#submit'][] = 'islandora_video_streaming_islandora_video_upload_form_submit';
   array_unshift($form['next']['#submit'], 'islandora_video_streaming_islandora_video_upload_form_submit');
@@ -119,8 +120,7 @@ function islandora_video_streaming_form_islandora_video_upload_form_alter(array 
 }
 
 /**
- * Handle submission of our parts of the islandora_video_upload_form_submit form
- * We added this to the form submission handler
+ * Handle submission of transcript files
  * @param array $form The Drupal form defintion, by reference
  * @param array $form_state The Drupal form state, by reference
  * @return void
@@ -138,7 +138,7 @@ function islandora_video_streaming_islandora_video_upload_form_submit(array &$fo
     $transcript_file = file_load($form_state['input']['transcript_file']['fid']);
     $transcript_file_path = drupal_realpath($transcript_file->uri);
     $ds->setContentFromFile($transcript_file_path, FALSE);
-    $ds->label = $transcript_file->filename;
+    $ds->label = $transcript_file_path;
     // Drupal returns $transcript_file->filemime = 'application/octet-stream' incorrectly for .vtt file
     $transcript_ext = pathinfo($transcript_file->filename, PATHINFO_EXTENSION);
     if (strtolower($transcript_ext) == 'vtt'){

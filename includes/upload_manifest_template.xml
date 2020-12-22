@@ -9,6 +9,11 @@
       <Start>PT0S</Start>
       <File>{Filename}</File>
       <Type>Primary</Type>
+      <Transcripts>
+        <Transcript>
+            <File>{TranscriptFilename}</File>
+        </Transcript>
+      </Transcripts>
     </Video>
   </Videos>
 </Session>

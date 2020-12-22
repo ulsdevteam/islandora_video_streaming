@@ -16,6 +16,8 @@ function islandora_video_streaming_panopto_upload($object, $force) {
       return islandora_video_no_obj_datastream($object->id);
     }
     $file_path = drupal_realpath($archival_file['file']->uri);
+    $transcript_path = drupal_realpath($object["TRANSCRIPT"]->label);
+    $object["TRANSCRIPT"]->label = basename($object["TRANSCRIPT"]->label);
     $failureMessage = array(
       'success' => false,
       'messages' => array(),
@@ -36,7 +38,7 @@ function islandora_video_streaming_panopto_upload($object, $force) {
       $session = $client->newSession($folder_id);
       $session->uploadFile($manifest_file);
       $session->uploadFile($file_path);
-      $session->uploadFile($object['TRANSCRIPT']);
+      $session->uploadFile($transcript_path);
       $client->finishSession($session);
       // have to call the get status endpoint to populate the SessionId
       while(true) {
@@ -100,6 +102,7 @@ function islandora_video_streaming_panopto_create_manifest_for_video($file_path,
   $template = str_replace("{Description}", 'This is a video session with the uploaded video file '.$file_name, $template);
   $template = str_replace("{Filename}", $file_name, $template);
   $template = str_replace("{Date}", date('c'), $template);
+  $template = str_replace("{TranscriptFilename}", $object['TRANSCRIPT']->label, $template);
   $part_of_file_name = explode(".", $file_name);
   $updated_manifest_file = tempnam('temporary://', $part_of_file_name[0]);
   rename($updated_manifest_file, $updated_manifest_file .= '.xml');
