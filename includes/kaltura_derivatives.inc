@@ -87,6 +87,7 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         );
         $failureMessage['messages'][] = $messages;
       }
+/* Pre-production
       //get upload token
       $uploadToken = new KalturaUploadToken();
       try {
@@ -123,6 +124,7 @@ function islandora_video_streaming_kaltura_upload($object, $force = false) {
         );
         $failureMessage['messages'][] = $messages;
       }
+*/
       
       $streaming['entry_id'] = $entry->id;
     } catch (Exception $e) {
