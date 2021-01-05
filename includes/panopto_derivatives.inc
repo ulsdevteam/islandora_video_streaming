@@ -27,8 +27,8 @@ function islandora_video_streaming_panopto_upload($object, $force) {
       'messages' => array(),
     );
     $streaming = array();
-   
-    $manifest_file = islandora_video_streaming_panopto_create_manifest_for_video($file_path, $transcript_file);
+  
+    $manifest_file = islandora_video_streaming_panopto_create_manifest_for_video($file_path, $object->label, $object->id, $transcript_file);
 
     $folder_id = variable_get('islandora_video_streaming_panopto_folder_id');
     $host = variable_get('islandora_video_streaming_panopto_host');
@@ -98,19 +98,21 @@ function islandora_video_streaming_panopto_upload($object, $force) {
 /**
  * Creates manifest file, in temporary storage, needed for Panopto Video Upload
  * @param string $file_path The filepath of the video
+ * @param string $title The title of the video
+ * @param string $description The description of the video (optional)
  * @param string $transcript_file The filename of the transcript (optional)
  * @return string The filename or filepath of the newly created manifest file
  */
-function islandora_video_streaming_panopto_create_manifest_for_video($file_path, $transcript_file = '') {
+function islandora_video_streaming_panopto_create_manifest_for_video($file_path, $title, $description = '', $transcript_file = '') {
   $file_name = basename($file_path);
   $manifest_template = drupal_get_path('module','islandora_video_streaming') . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'upload_manifest_template.xml';
   $template = file_get_contents($manifest_template);
-  $template = str_replace("{Title}", $file_name, $template);
-  $template = str_replace("{Description}", 'This is a video session with the uploaded video file '.$file_name, $template);
-  $template = str_replace("{Filename}", $file_name, $template);
+  $template = str_replace("{Title}", htmlentities($title), $template);
+  $template = str_replace("{Description}", htmlentities($description ? $description : $title), $template);
+  $template = str_replace("{Filename}", htmlentities($file_name), $template);
   $template = str_replace("{Date}", date('c'), $template);
   if ($transcript_file) {
-    $template = str_replace("</Video>", '<Transcripts><Transcript><File>'.$transcript_file.'</File></Transcript></Transcripts>'."\n".'</Video>', $template);
+    $template = str_replace("</Video>", '<Transcripts><Transcript><File>'.htmlentities($transcript_file).'</File></Transcript></Transcripts>'."\n".'</Video>', $template);
   }
   $part_of_file_name = explode(".", $file_name);
   $updated_manifest_file = tempnam('temporary://', $part_of_file_name[0]);
