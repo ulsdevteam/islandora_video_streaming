@@ -19,8 +19,9 @@ function islandora_video_streaming_panopto_upload($object, $force) {
     $transcript_path = '';
     $transcript_file = '';
     if (isset($object['TRANSCRIPT'])) {
-      $transcript_path = drupal_realpath($object["TRANSCRIPT"]->label);
-      $transcript_file = $object["TRANSCRIPT"]->label = basename($object["TRANSCRIPT"]->label);
+      $transcript_path = drupal_tempnam('temporary://', 'transcript');
+      $object['TRANSCRIPT']->getContent($transcript_path);
+      $transcript_file = basename($transcript_path);
     }
     $failureMessage = array(
       'success' => false,
@@ -69,12 +70,14 @@ function islandora_video_streaming_panopto_upload($object, $force) {
       $failureMessage['messages'][] = $messages;
       watchdog_exception('islandora_video_streaming_panopto', $ex);
     }    
-
+    if ($transcript_path) {
+      drupal_unlink($transcript_path);
+    }
     drupal_unlink($manifest_file);    
     file_delete($archival_file['file'], true);
     if ($streaming) {
        // Write the data to a temporary file.
-      $temp_name = drupal_tempnam('temporary://', 'file');
+      $temp_name = drupal_tempnam('temporary://', 'stream');
       if (file_put_contents($temp_name, json_encode($streaming)) === FALSE) {
         $messages = array(
             'message' => t("Failed to create temporary file @filename for object @pid when uploading to Panopto"),
@@ -114,8 +117,7 @@ function islandora_video_streaming_panopto_create_manifest_for_video($file_path,
   if ($transcript_file) {
     $template = str_replace("</Video>", '<Transcripts><Transcript><File>'.htmlentities($transcript_file).'</File></Transcript></Transcripts>'."\n".'</Video>', $template);
   }
-  $part_of_file_name = explode(".", $file_name);
-  $updated_manifest_file = tempnam('temporary://', $part_of_file_name[0]);
+  $updated_manifest_file = drupal_tempnam('temporary://', 'manifest');
   rename($updated_manifest_file, $updated_manifest_file .= '.xml');
   file_put_contents($updated_manifest_file, $template);
 

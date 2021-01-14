@@ -94,7 +94,7 @@ function islandora_video_streaming_islandora_video_admin_submit($form, &$form_st
 function islandora_video_streaming_form_islandora_video_upload_form_alter(array &$form, array &$form_state) {
   // Upload size as MB
   $upload_size = file_upload_max_size() / 1024 / 1024;
-  $transcript_extensions = array('vtt xml');
+  $transcript_extensions = array('vtt srt');
   $index_of_file = array_search('file', array_keys($form));
   $transcript_array = array(
       'transcript_file' => array(
@@ -137,10 +137,10 @@ function islandora_video_streaming_islandora_video_upload_form_submit(array &$fo
     $transcript_file = file_load($form_state['input']['transcript_file']['fid']);
     $transcript_file_path = drupal_realpath($transcript_file->uri);
     $ds->setContentFromFile($transcript_file_path, FALSE);
-    $ds->label = $transcript_file_path;
+    $ds->label = basename($transcript_file_path);
     // Drupal returns $transcript_file->filemime = 'application/octet-stream' incorrectly for .vtt file
     $transcript_ext = pathinfo($transcript_file->filename, PATHINFO_EXTENSION);
-    if (strtolower($transcript_ext) == 'vtt'){
+    if ($transcript_file->filemime === 'application/octet-stream' && strtolower($transcript_ext) === 'vtt'){
       $ds->mimetype = 'text/vtt';
     } else {
       $ds->mimetype = $transcript_file->filemime;
