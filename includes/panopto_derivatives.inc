@@ -98,7 +98,11 @@ function islandora_video_streaming_panopto_upload($object, $force) {
         $failureMessage['messages'][] = $messages;
         return $failureMessage;
       }
-      return islandora_video_add_datastream($object, 'PANOPTO_INFO', $temp_name);
+      $result = islandora_video_add_datastream($object, 'PANOPTO_INFO', $temp_name);
+      if ($result['success'] && $object['PANOPTO_INFO']->mimetype === 'application/octet-stream') {
+          $object['PANOPTO_INFO']->mimetype = 'application/json';
+      }
+      return $result;
     } else {
       return $failureMessage;
     }
