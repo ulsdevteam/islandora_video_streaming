@@ -22,6 +22,13 @@ function islandora_video_streaming_panopto_upload($object, $force) {
       $transcript_path = drupal_tempnam('temporary://', 'transcript');
       $object['TRANSCRIPT']->getContent($transcript_path);
       $transcript_file = basename($transcript_path);
+      // Panopto will choke on valid WebVTT files because of the header
+      if ($object['TRANSCRIPT']->mimetype === 'text/vtt') {
+          // Remove the WEBVTT header and any empty leading lines
+          $vtt = file_get_contents($transcript_path);
+          $vtt = preg_replace('/^WEBVTT.*[\r\n]+/', '', $vtt, 1);
+          file_put_contents($transcript_path, $vtt);
+      }
     }
     $failureMessage = array(
       'success' => false,
@@ -38,8 +45,8 @@ function islandora_video_streaming_panopto_upload($object, $force) {
     $secret_client_id = variable_get('islandora_video_streaming_panopto_secret_client_id');
     $username = variable_get('islandora_video_streaming_panopto_username');
     $password = variable_get('islandora_video_streaming_panopto_password');
-    $client->authenticate($client_id, $secret_client_id, $username, $password);
     try {
+      $client->authenticate($client_id, $secret_client_id, $username, $password);
       $session = $client->newSession($folder_id);
       $session->uploadFile($manifest_file);
       $session->uploadFile($file_path);
@@ -48,7 +55,7 @@ function islandora_video_streaming_panopto_upload($object, $force) {
       }
       $client->finishSession($session);
       // have to call the get status endpoint to populate the SessionId
-      while(true) {
+      while (true) {
         $status = $client->getSessionStatus($session);
         if ($status > 1) {
           break;
@@ -57,7 +64,7 @@ function islandora_video_streaming_panopto_upload($object, $force) {
         }
       }
       $streaming['upload_id'] = $session->sessionId();
-    }catch (Exception $ex) {
+    } catch (Exception $ex) {
       $messages = array(
         'message' => t('Panopto upload error: @exception for object @pid'),
         'message_sub' => array(
