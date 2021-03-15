@@ -63,6 +63,7 @@ function islandora_video_streaming_panopto_upload($object, $force) {
           sleep(5);
         }
       }
+      // TODO: somehow $session->sessionId() can be empty, with no exceptions thrown
       $streaming['upload_id'] = $session->sessionId();
     } catch (Exception $ex) {
       $messages = array(
