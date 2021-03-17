@@ -67,18 +67,6 @@ function islandora_video_streaming_panopto_admin(array $form, array &$form_state
     '#title' => t('Video Information'),
     '#description' => t('Information about video options can be found here: https://support.panopto.com/s/article/Embed-a-Video'),
   );
-  $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_height'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Height'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_height'),
-    '#required' => TRUE,
-  );
-  $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Width'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_width'),
-    '#required' => TRUE,
-  );
   $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_start_at'] = array(
     '#type' => 'textfield',
     '#title' => t('Start At (HH:mm:ss, hours and minutes optional)'),
