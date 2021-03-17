@@ -84,3 +84,72 @@ function islandora_video_streaming_islandora_video_admin_submit($form, &$form_st
       break;
   }
 }
+
+/**
+ * Change the islandora_video_upload_form form
+ * islandora_video_streaming (module name) + 'form' + islandora_video_upload_form (form name) + 'alter'
+ * @param array $form The Drupal form defintion, by reference
+ * @return void
+**/
+function islandora_video_streaming_form_islandora_video_upload_form_alter(array &$form, array &$form_state) {
+  // Upload size as MB
+  $upload_size = file_upload_max_size() / 1024 / 1024;
+  $transcript_extensions = array('vtt srt');
+  $index_of_file = array_search('file', array_keys($form));
+  $transcript_array = array(
+      'transcript_file' => array(
+        '#title' => t('Transcript file'),
+        '#type' => 'managed_file',
+        '#description' => t('Select transcript file to upload.<br/>Files must be less than <b>@size MB.</b><br/>Allowed file types: <b>@ext.</b>', array('@size' => $upload_size, '@ext' => $transcript_extensions[0])),
+        '#default_value' => isset($form_state['values']['transcript_file']) ? $form_state['values']['transcript_file'] : NULL,
+        '#upload_location' => 'temporary://',
+        '#upload_validators' => array(
+          'file_validate_extensions' => $transcript_extensions,
+          'file_validate_size' => array($upload_size * 1024 * 1024),
+      ),
+    ),
+  );
+  $form =  array_slice($form, 0, $index_of_file + 1, true) + $transcript_array + array_slice($form, $index_of_file + 1, count($form) - 1, true);
+  
+  // Process transcript files first, so that they are available upon derivative processing of the OBJ
+  array_unshift($form['next']['#submit'], 'islandora_video_streaming_islandora_video_upload_form_submit');
+  array_unshift($form['hidden_next']['#submit'], 'islandora_video_streaming_islandora_video_upload_form_submit');
+}
+
+/**
+ * Handle submission of transcript files
+ * @param array $form The Drupal form defintion, by reference
+ * @param array $form_state The Drupal form state, by reference
+ * @return void
+**/
+function islandora_video_streaming_islandora_video_upload_form_submit(array &$form, array &$form_state) {
+   $object = islandora_ingest_form_get_object($form_state);
+   if (isset($form_state['input']['transcript_file']['fid']) && $form_state['input']['transcript_file']['fid']) {
+    if (empty($object['TRANSCRIPT'])) {
+      $ds = $object->constructDatastream('TRANSCRIPT', 'M');
+      $object->ingestDatastream($ds);
+    } else {
+      $ds = $object['TRANSCRIPT'];
+    }
+    $transcript_file = file_load($form_state['input']['transcript_file']['fid']);
+    $transcript_file_path = drupal_realpath($transcript_file->uri);
+    $ds->setContentFromFile($transcript_file_path, FALSE);
+    $ds->label = basename($transcript_file_path);
+    // $transcript_file->filemime may be 'application/octet-stream' incorrectly for these files
+    $transcript_ext = pathinfo($transcript_file->filename, PATHINFO_EXTENSION);
+    if ($transcript_file->filemime === 'application/octet-stream') {
+      switch (strtolower($transcript_ext)) {
+          case 'vtt':
+            $ds->mimetype = 'text/vtt';
+            break;
+          case 'srt':
+            $ds->mimetype = 'application/x-subrip';
+            break;
+      }
+    } else {
+      $ds->mimetype = $transcript_file->filemime;
+    }
+  }
+}
+
+

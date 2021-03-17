@@ -67,81 +67,59 @@ function islandora_video_streaming_panopto_admin(array $form, array &$form_state
     '#title' => t('Video Information'),
     '#description' => t('Information about video options can be found here: https://support.panopto.com/s/article/Embed-a-Video'),
   );
-  $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_height'] = array(
+  $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_start_at'] = array(
     '#type' => 'textfield',
-    '#title' => t('Height'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_height'),
-    '#required' => TRUE,
-  );
-  $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Width'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_width'),
-    '#required' => TRUE,
-  );
-  $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_aspect_ratio'] = array(
-    '#type' => 'radios',
-    '#title' => t('Aspect Ratio'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_aspect_ratio'),
-    '#options' => array(
-      0 => t('16:9'),
-      1 => t('4:3'),
-    ),
-    '#required' => TRUE,
-  );
-  $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_vieo_start_at'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Start At'),
+    '#title' => t('Start At (HH:mm:ss, hours and minutes optional)'),
     '#default_value' => variable_get('islandora_video_streaming_panopto_video_start_at'),
   );
   $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_interactivity'] = array(
     '#type' => 'radios',
     '#title' => t('Interactivity'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_video_interactivity'),
+    '#default_value' => variable_get('islandora_video_streaming_panopto_video_interactivity'),
     '#options' => array(
-      0 => t('All'),
-      3 => t('Search'),
-      4 => t('None')
+      'all' => t('All'),
+      'search' => t('Search'),
+      'none' => t('None')
     ),
     '#required' => TRUE,
   );
   $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_autoplay'] = array(
     '#type' => 'radios',
-    '#title' => t('Interactivity'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_video_autoplay'),
+    '#title' => t('Autoplay'),
+    '#default_value' => variable_get('islandora_video_streaming_panopto_video_autoplay'),
     '#options' => array(
-      0 => t('True'),
-      1 => t('False'),
+      'true' => t('True'),
+      'false' => t('False'),
     ),
     '#required' => TRUE,
   );
   $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_offer_viewer'] = array(
     '#type' => 'radios',
     '#title' => t('Offer Viewer'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_video_offer_viewer'),
+    '#default_value' => variable_get('islandora_video_streaming_panopto_video_offer_viewer'),
     '#options' => array(
-      0 => t('True'),
-      1 => t('False'),
+      'true' => t('True'),
+      'false' => t('False'),
     ),
     '#required' => TRUE,
   );
   $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_showtitle'] = array(
     '#type' => 'radios',
     '#title' => t('Show Title'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_video_showtitle'),
+    '#default_value' => variable_get('islandora_video_streaming_panopto_video_showtitle'),
     '#options' => array(
-      0 => t('True'),
-      1 => t('False'),
+      'true' => t('True'),
+      'false' => t('False'),
     ),
     '#required' => TRUE,
   );
   $form['islandora_video_streaming_panopto_video_information']['islandora_video_streaming_panopto_video_showbrand'] = array(
     '#type' => 'radios',
     '#title' => t('Show Brand'),
-    '#default_value' => variable_get('islandora_video_streaming_panopto_video_video_showbrand'),
+    '#default_value' => variable_get('islandora_video_streaming_panopto_video_showbrand'),
     '#options' => array(
-      0 => t('True'),
-      1 => t('False'),
+      'true' => t('True'),
+      'false' => t('False'),
     ),
     '#required' => TRUE,
   );
